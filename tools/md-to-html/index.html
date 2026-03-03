@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MD → HTML</title>
+  <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>MD → HTML</h1>
+    <p class="subtitle">Convert Markdown to styled HTML</p>
+    <a id="home-btn" href="../../" title="Back to homepage">~/</a>
+    <button id="theme-btn" title="Toggle theme">&#9788;</button>
+  </header>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button id="upload-btn">&#8593; Upload</button>
+      <input type="file" id="file-input" accept=".md,.txt,.markdown" hidden />
+      <label for="theme-select">Theme:</label>
+      <select id="theme-select">
+        <option value="dracula">Dracula</option>
+        <option value="nord">Nord</option>
+        <option value="custom">Custom</option>
+      </select>
+      <button id="customize-btn">&#9998; Customize</button>
+    </div>
+    <div class="toolbar-right">
+      <button id="copy-btn">&#8984; Copy</button>
+      <button id="download-btn">&#8595; Download</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="editor-pane">
+      <div class="pane">
+        <div class="pane-label">markdown</div>
+        <textarea id="md-input" spellcheck="false" placeholder="Type or paste Markdown here…"></textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-label">html output</div>
+        <textarea id="html-output" readonly spellcheck="false" placeholder="HTML will appear here…"></textarea>
+      </div>
+    </div>
+  </main>
+
+  <!-- Customize modal -->
+  <div id="customize-modal" class="modal hidden">
+    <div class="modal-box">
+      <button id="customize-close" class="close-btn" aria-label="Close">&#10005;</button>
+      <h2 class="modal-title">CUSTOMIZE THEME</h2>
+      <div class="color-rows">
+        <div class="color-row">
+          <label for="c-bg">Background</label>
+          <input type="color" id="c-bg" />
+        </div>
+        <div class="color-row">
+          <label for="c-text">Text</label>
+          <input type="color" id="c-text" />
+        </div>
+        <div class="color-section">
+          <div class="color-section-label">Headings</div>
+          <div class="heading-grid">
+            <div class="color-row"><label for="c-h1">H1</label><input type="color" id="c-h1" /></div>
+            <div class="color-row"><label for="c-h2">H2</label><input type="color" id="c-h2" /></div>
+            <div class="color-row"><label for="c-h3">H3</label><input type="color" id="c-h3" /></div>
+            <div class="color-row"><label for="c-h4">H4</label><input type="color" id="c-h4" /></div>
+            <div class="color-row"><label for="c-h5">H5</label><input type="color" id="c-h5" /></div>
+            <div class="color-row"><label for="c-h6">H6</label><input type="color" id="c-h6" /></div>
+          </div>
+        </div>
+        <div class="color-row">
+          <label for="c-link">Links</label>
+          <input type="color" id="c-link" />
+        </div>
+        <div class="color-row">
+          <label for="c-code-bg">Code background</label>
+          <input type="color" id="c-code-bg" />
+        </div>
+        <div class="color-row">
+          <label for="c-code-text">Code text</label>
+          <input type="color" id="c-code-text" />
+        </div>
+        <div class="color-row">
+          <label for="c-blockquote">Blockquote</label>
+          <input type="color" id="c-blockquote" />
+        </div>
+        <div class="color-row">
+          <label for="c-strong">Strong / accent</label>
+          <input type="color" id="c-strong" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="customize-apply">APPLY</button>
+        <button id="customize-cancel">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>codename gen</title>
+  <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <a id="home-btn" href="../../">~/</a>
+    <h1>CODENAME GEN</h1>
+    <button id="theme-btn" title="Toggle theme">&#9788;</button>
+  </header>
+
+  <main>
+    <section id="filter-section">
+      <div class="section-label">Categories</div>
+      <div id="cat-filters"></div>
+    </section>
+
+    <section id="generator-section">
+      <button id="generate-btn">GENERATE</button>
+      <p id="gen-error" class="hidden"></p>
+      <div id="result" class="hidden">
+        <div id="result-full"></div>
+        <div id="result-short"></div>
+      </div>
+    </section>
+
+    <section id="lookup-section">
+      <div class="section-label">Decode a short code</div>
+      <div id="lookup-input-row">
+        <input id="lookup-input" type="text" maxlength="4"
+               placeholder="CHNU" autocomplete="off" spellcheck="false" />
+        <button id="lookup-btn">DECODE</button>
+      </div>
+      <p id="lookup-error" class="hidden"></p>
+      <div id="lookup-results" class="hidden">
+        <div class="lookup-col">
+          <div class="lookup-col-label" id="lookup-label-1"></div>
+          <div id="lookup-matches-1"></div>
+        </div>
+        <div class="lookup-col">
+          <div class="lookup-col-label" id="lookup-label-2"></div>
+          <div id="lookup-matches-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="history-section">
+      <div class="history-header">
+        <span id="history-count" class="section-label">Generated (0)</span>
+        <button id="clear-btn">CLEAR</button>
+      </div>
+      <p id="history-empty">No codenames generated yet.</p>
+      <div id="history-list"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

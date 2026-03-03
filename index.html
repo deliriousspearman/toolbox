@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tools</title>
+  <link rel="icon" type="image/svg+xml" href="images/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>TOOLS</h1>
+    <p>a collection of things</p>
+    <button id="theme-btn" title="Toggle theme">&#9788;</button>
+  </header>
+
+  <main>
+    <ul class="tools-list">
+
+      <li class="tool-card">
+        <a href="tools/process-wordle/">
+          <div class="tool-name">procwordle</div>
+          <div class="tool-desc">Guess the daily process name — Wordle for sysadmins</div>
+        </a>
+      </li>
+
+      <li class="tool-card">
+        <a href="tools/cron-time/">
+          <div class="tool-name">cron time</div>
+          <div class="tool-desc">Parse a cron expression — next run times with timezone &amp; clock skew support</div>
+        </a>
+      </li>
+
+      <li class="tool-card">
+        <a href="tools/md-to-html/">
+          <div class="tool-name">md → html</div>
+          <div class="tool-desc">Convert Markdown to self-styled HTML — Dracula &amp; Nord themes, inline CSS</div>
+        </a>
+      </li>
+
+      <li class="tool-card">
+        <a href="tools/shell-explain/">
+          <div class="tool-name">shell explain</div>
+          <div class="tool-desc">Annotated shell command library — search, learn, and add your own</div>
+        </a>
+      </li>
+
+      <li class="tool-card">
+        <a href="tools/codename-gen/">
+          <div class="tool-name">codename gen</div>
+          <div class="tool-desc">Generate random two-word codenames from categorised word lists</div>
+        </a>
+      </li>
+
+    </ul>
+  </main>
+
+  <footer>
+    made by claude &mdash; updated <span id="last-updated"></span>
+  </footer>
+
+  <script>
+    (function () {
+      var btn = document.getElementById("theme-btn");
+      function applyTheme(isLight) {
+        document.body.classList.toggle("light", isLight);
+        btn.textContent = isLight ? "\u263D" : "\u2600";
+      }
+      applyTheme(localStorage.getItem("siteTheme") === "light");
+      btn.addEventListener("click", function () {
+        var nowLight = !document.body.classList.contains("light");
+        applyTheme(nowLight);
+        localStorage.setItem("siteTheme", nowLight ? "light" : "dark");
+      });
+      var d = new Date(document.lastModified);
+      document.getElementById("last-updated").textContent =
+        d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
+    })();
+  </script>
+</body>
+</html>

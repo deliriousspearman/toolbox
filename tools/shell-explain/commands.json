@@ -1,0 +1,329 @@
+[
+  {
+    "id": "builtin-001",
+    "command": "ls -la",
+    "description": "List all files including hidden ones with detailed info",
+    "categories": ["files"],
+    "parts": [
+      { "token": "ls",  "desc": "list directory contents" },
+      { "token": "-l",  "desc": "long format — shows permissions, owner, size, and modification date" },
+      { "token": "-a",  "desc": "include entries starting with . (hidden files and directories)" }
+    ]
+  },
+  {
+    "id": "builtin-002",
+    "command": "cp -r src/ dest/",
+    "description": "Copy a directory and all its contents to a new location",
+    "categories": ["files"],
+    "parts": [
+      { "token": "cp",    "desc": "copy files and directories" },
+      { "token": "-r",    "desc": "recursive — required to copy a directory and everything inside it" },
+      { "token": "src/",  "desc": "the source directory to copy from" },
+      { "token": "dest/", "desc": "the destination path to copy to" }
+    ]
+  },
+  {
+    "id": "builtin-003",
+    "command": "mv old.txt new.txt",
+    "description": "Rename a file, or move it to a different path",
+    "categories": ["files"],
+    "parts": [
+      { "token": "mv",      "desc": "move (rename) files and directories" },
+      { "token": "old.txt", "desc": "the current filename or path" },
+      { "token": "new.txt", "desc": "the new filename or destination path" }
+    ]
+  },
+  {
+    "id": "builtin-004",
+    "command": "rm -rf /path/to/dir",
+    "description": "Delete a directory and all its contents — no confirmation, no recovery",
+    "categories": ["files"],
+    "parts": [
+      { "token": "rm",           "desc": "remove files or directories" },
+      { "token": "-r",           "desc": "recursive — removes directory contents before the directory itself" },
+      { "token": "-f",           "desc": "force — no prompts, ignores missing files, suppresses errors" },
+      { "token": "/path/to/dir", "desc": "the target directory to permanently delete" }
+    ]
+  },
+  {
+    "id": "builtin-005",
+    "command": "find . -name \"*.log\" -type f",
+    "description": "Recursively find all .log files starting from the current directory",
+    "categories": ["files"],
+    "parts": [
+      { "token": "find",          "desc": "search for files and directories in a directory tree" },
+      { "token": ".",             "desc": "the starting directory for the search (current directory)" },
+      { "token": "-name \"*.log\"", "desc": "match entries whose name ends in .log (shell glob pattern)" },
+      { "token": "-type f",       "desc": "restrict results to regular files only, not directories or symlinks" }
+    ]
+  },
+  {
+    "id": "builtin-006",
+    "command": "chmod 755 script.sh",
+    "description": "Make a script executable by the owner and readable/runnable by everyone",
+    "categories": ["files"],
+    "parts": [
+      { "token": "chmod",     "desc": "change file mode bits (permissions)" },
+      { "token": "755",       "desc": "octal permission mask: owner=rwx (7), group=r-x (5), others=r-x (5)" },
+      { "token": "script.sh", "desc": "the file to change permissions on" }
+    ]
+  },
+  {
+    "id": "builtin-007",
+    "command": "chown user:group file.txt",
+    "description": "Change the owner and group of a file",
+    "categories": ["files"],
+    "parts": [
+      { "token": "chown",      "desc": "change file owner and group" },
+      { "token": "user:group", "desc": "the new owner username and group name, separated by a colon" },
+      { "token": "file.txt",   "desc": "the file to change ownership of" }
+    ]
+  },
+  {
+    "id": "builtin-008",
+    "command": "grep -rn 'TODO' .",
+    "description": "Search all files recursively for lines containing TODO, showing line numbers",
+    "categories": ["text"],
+    "parts": [
+      { "token": "grep",   "desc": "search file contents for lines matching a pattern" },
+      { "token": "-r",     "desc": "search recursively through all subdirectories" },
+      { "token": "-n",     "desc": "prefix each matching line with its line number" },
+      { "token": "'TODO'", "desc": "the literal string (or regular expression) to search for" },
+      { "token": ".",      "desc": "the directory to search (current directory)" }
+    ]
+  },
+  {
+    "id": "builtin-009",
+    "command": "sed -i 's/foo/bar/g' file.txt",
+    "description": "Replace every occurrence of \"foo\" with \"bar\" directly in a file",
+    "categories": ["text"],
+    "parts": [
+      { "token": "sed",           "desc": "stream editor — applies editing commands to each line of input" },
+      { "token": "-i",            "desc": "edit the file in place (overwrites the original)" },
+      { "token": "'s/foo/bar/g'", "desc": "substitution: replace foo→bar, g means all occurrences per line" },
+      { "token": "file.txt",      "desc": "the file to modify" }
+    ]
+  },
+  {
+    "id": "builtin-010",
+    "command": "awk -F, '{print $1, $3}' data.csv",
+    "description": "Print the 1st and 3rd comma-separated columns from a CSV file",
+    "categories": ["text"],
+    "parts": [
+      { "token": "awk",              "desc": "pattern-directed scanning and text processing language" },
+      { "token": "-F,",              "desc": "set the input field separator to a comma (default is whitespace)" },
+      { "token": "'{print $1, $3}'", "desc": "action: print the 1st and 3rd fields of each line" },
+      { "token": "data.csv",         "desc": "the input file to process" }
+    ]
+  },
+  {
+    "id": "builtin-011",
+    "command": "sort -t, -k2 -n data.csv",
+    "description": "Sort a CSV file numerically by the second column",
+    "categories": ["text"],
+    "parts": [
+      { "token": "sort",     "desc": "sort lines of text" },
+      { "token": "-t,",      "desc": "use a comma as the field separator" },
+      { "token": "-k2",      "desc": "sort by the second field" },
+      { "token": "-n",       "desc": "numeric sort — compare as numbers, not strings" },
+      { "token": "data.csv", "desc": "the file to sort" }
+    ]
+  },
+  {
+    "id": "builtin-012",
+    "command": "cat access.log | sort | uniq -c | sort -rn",
+    "description": "Count and rank unique lines in a log file, highest count first",
+    "categories": ["text"],
+    "parts": [
+      { "token": "cat access.log", "desc": "print the log file contents to stdout" },
+      { "token": "sort",           "desc": "sort lines so duplicates become consecutive" },
+      { "token": "uniq -c",        "desc": "collapse consecutive duplicate lines, prefix each with its count" },
+      { "token": "sort -rn",       "desc": "sort numerically (-n) in reverse (-r) — highest count first" }
+    ]
+  },
+  {
+    "id": "builtin-013",
+    "command": "grep -v '^#' config.txt | grep -v '^$'",
+    "description": "Strip comment lines and blank lines from a config file",
+    "categories": ["text"],
+    "parts": [
+      { "token": "grep -v '^#'", "desc": "-v inverts the match: print lines that do NOT start with #" },
+      { "token": "config.txt",   "desc": "the input file" },
+      { "token": "grep -v '^$'", "desc": "filter out blank lines (^$ matches a line with nothing in it)" }
+    ]
+  },
+  {
+    "id": "builtin-014",
+    "command": "tar -czf archive.tar.gz dir/",
+    "description": "Compress a directory into a gzip-compressed tar archive",
+    "categories": ["archive"],
+    "parts": [
+      { "token": "tar",            "desc": "tape archiver — bundles files and directories into a single file" },
+      { "token": "-czf",           "desc": "combined: -c create, -z gzip compress, -f next arg is the filename" },
+      { "token": "archive.tar.gz", "desc": "the name of the output archive file" },
+      { "token": "dir/",           "desc": "the directory to include in the archive" }
+    ]
+  },
+  {
+    "id": "builtin-015",
+    "command": "tar -xzf archive.tar.gz -C /dest/",
+    "description": "Extract a gzip-compressed tar archive into a specified directory",
+    "categories": ["archive"],
+    "parts": [
+      { "token": "tar",            "desc": "tape archiver" },
+      { "token": "-xzf",           "desc": "combined: -x extract, -z gzip decompress, -f next arg is the filename" },
+      { "token": "archive.tar.gz", "desc": "the archive file to read from" },
+      { "token": "-C",             "desc": "change to this directory before extracting" },
+      { "token": "/dest/",         "desc": "the destination directory for the extracted files" }
+    ]
+  },
+  {
+    "id": "builtin-016",
+    "command": "ps aux | grep nginx",
+    "description": "Find all running processes matching a name",
+    "categories": ["processes"],
+    "parts": [
+      { "token": "ps",         "desc": "report a snapshot of current running processes" },
+      { "token": "aux",        "desc": "a=all users, u=user-oriented format (owner, CPU, memory), x=include daemons" },
+      { "token": "grep nginx", "desc": "filter the process list to lines containing 'nginx'" }
+    ]
+  },
+  {
+    "id": "builtin-017",
+    "command": "kill -9 1234",
+    "description": "Immediately force-terminate a process by its PID",
+    "categories": ["processes"],
+    "parts": [
+      { "token": "kill", "desc": "send a signal to a process" },
+      { "token": "-9",   "desc": "send SIGKILL — cannot be caught, blocked, or ignored by the process" },
+      { "token": "1234", "desc": "the process ID (PID) of the process to terminate" }
+    ]
+  },
+  {
+    "id": "builtin-018",
+    "command": "lsof -i :8080",
+    "description": "List processes that have a socket open on port 8080",
+    "categories": ["processes"],
+    "parts": [
+      { "token": "lsof",  "desc": "list open files — in Unix, network sockets are file descriptors" },
+      { "token": "-i",    "desc": "select files related to internet network connections" },
+      { "token": ":8080", "desc": "filter to connections on port 8080" }
+    ]
+  },
+  {
+    "id": "builtin-019",
+    "command": "curl -X POST -H \"Content-Type: application/json\" -d '{\"k\":\"v\"}' https://api.example.com",
+    "description": "Send a JSON POST request to an API endpoint",
+    "categories": ["network"],
+    "parts": [
+      { "token": "curl",                                   "desc": "transfer data to or from a server using various protocols" },
+      { "token": "-X POST",                                "desc": "use the HTTP POST method instead of the default GET" },
+      { "token": "-H \"Content-Type: application/json\"", "desc": "add a request header specifying the body format as JSON" },
+      { "token": "-d '{\"k\":\"v\"}'",                    "desc": "the request body data to send" },
+      { "token": "https://api.example.com",                "desc": "the URL of the API endpoint" }
+    ]
+  },
+  {
+    "id": "builtin-020",
+    "command": "ssh -i ~/.ssh/id_rsa user@host",
+    "description": "Log into a remote server with SSH using a private key file",
+    "categories": ["network"],
+    "parts": [
+      { "token": "ssh",              "desc": "OpenSSH client — opens an encrypted shell session to a remote host" },
+      { "token": "-i ~/.ssh/id_rsa", "desc": "use this private key file for public-key authentication" },
+      { "token": "user@host",        "desc": "the account (user) and server (host / IP address) to connect to" }
+    ]
+  },
+  {
+    "id": "builtin-021",
+    "command": "rsync -avz --progress src/ user@host:/dest/",
+    "description": "Sync a local directory to a remote server, showing transfer progress",
+    "categories": ["network"],
+    "parts": [
+      { "token": "rsync",            "desc": "fast, incremental file transfer — only sends changed data" },
+      { "token": "-a",               "desc": "archive mode: preserves permissions, timestamps, symlinks, and owner" },
+      { "token": "-v",               "desc": "verbose — print the name of each file as it is transferred" },
+      { "token": "-z",               "desc": "compress file data during the transfer to save bandwidth" },
+      { "token": "--progress",       "desc": "show per-file transfer progress and speed" },
+      { "token": "src/",             "desc": "local source directory (trailing slash syncs contents, not the folder itself)" },
+      { "token": "user@host:/dest/", "desc": "the remote destination in user@host:/path format" }
+    ]
+  },
+  {
+    "id": "builtin-022",
+    "command": "df -h",
+    "description": "Show disk space usage of all mounted filesystems in human-readable units",
+    "categories": ["system"],
+    "parts": [
+      { "token": "df", "desc": "report filesystem disk space usage" },
+      { "token": "-h", "desc": "human-readable sizes — prints K, M, G instead of raw 512-byte blocks" }
+    ]
+  },
+  {
+    "id": "builtin-023",
+    "command": "du -sh -- *",
+    "description": "Show the total disk usage of each item in the current directory",
+    "categories": ["system"],
+    "parts": [
+      { "token": "du",  "desc": "estimate file space usage" },
+      { "token": "-s",  "desc": "summarize — one total per argument instead of listing each subdirectory" },
+      { "token": "-h",  "desc": "human-readable sizes (K, M, G)" },
+      { "token": "--",  "desc": "end of options — ensures filenames starting with - aren't treated as flags" },
+      { "token": "*",   "desc": "shell glob expanding to every file and directory in the current directory" }
+    ]
+  },
+  {
+    "id": "builtin-024",
+    "command": "git log --oneline --graph --all",
+    "description": "Show a compact ASCII branch graph of the full commit history",
+    "categories": ["git"],
+    "parts": [
+      { "token": "git log",   "desc": "show the commit history" },
+      { "token": "--oneline", "desc": "condense each commit to one line: short hash + subject" },
+      { "token": "--graph",   "desc": "draw an ASCII art graph of branch and merge structure" },
+      { "token": "--all",     "desc": "include commits reachable from all branches and tags" }
+    ]
+  },
+  {
+    "id": "builtin-025",
+    "command": "git stash pop",
+    "description": "Restore the most recently stashed changes and remove the stash entry",
+    "categories": ["git"],
+    "parts": [
+      { "token": "git stash", "desc": "commands for temporarily shelving uncommitted changes" },
+      { "token": "pop",       "desc": "apply the most recent stash entry and drop it from the stash list" }
+    ]
+  },
+  {
+    "id": "builtin-026",
+    "command": "git diff --staged",
+    "description": "Show what changes are staged and ready for the next commit",
+    "categories": ["git"],
+    "parts": [
+      { "token": "git diff", "desc": "show differences between two states" },
+      { "token": "--staged", "desc": "compare the index (staging area) to HEAD — shows what will be committed" }
+    ]
+  },
+  {
+    "id": "builtin-027",
+    "command": "git rebase -i HEAD~3",
+    "description": "Interactively rewrite the last 3 commits — reorder, squash, edit, or drop them",
+    "categories": ["git"],
+    "parts": [
+      { "token": "git rebase", "desc": "reapply a sequence of commits on top of a different base" },
+      { "token": "-i",         "desc": "interactive mode — opens an editor to pick, squash, edit, or drop commits" },
+      { "token": "HEAD~3",     "desc": "start from 3 commits before the current HEAD" }
+    ]
+  },
+  {
+    "id": "builtin-028",
+    "command": "git reset --soft HEAD~1",
+    "description": "Undo the last commit but keep all changed files staged, ready to re-commit",
+    "categories": ["git"],
+    "parts": [
+      { "token": "git reset", "desc": "move HEAD (and optionally the index and working tree) to a different commit" },
+      { "token": "--soft",    "desc": "only move HEAD — leave the index unchanged so files stay staged" },
+      { "token": "HEAD~1",    "desc": "the target commit: one step before the current HEAD" }
+    ]
+  }
+]

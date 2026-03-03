@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cron Time</title>
+  <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>CRON TIME</h1>
+    <p class="subtitle">Parse and preview cron schedules</p>
+    <a id="home-btn" href="../../" title="Back to homepage">~/</a>
+    <button id="theme-btn" title="Toggle theme">&#9788;</button>
+  </header>
+
+  <main>
+
+    <div class="input-section">
+      <div class="input-row">
+        <div class="field-wrap cron-wrap">
+          <label for="cron-input">expression</label>
+          <div class="prompt-wrap">
+            <input id="cron-input" type="text" spellcheck="false"
+              placeholder="* * * * *" autocomplete="off" />
+          </div>
+          <div id="cron-error" class="error-msg hidden"></div>
+        </div>
+      </div>
+
+      <div class="options-row">
+        <div class="field-wrap skew-wrap">
+          <label for="skew-input">clock skew</label>
+          <div class="skew-input-row">
+            <input id="skew-input" type="number" value="0" step="1" />
+            <span class="unit">minutes</span>
+          </div>
+          <div class="field-hint">offset applied to &ldquo;now&rdquo; — use if your system clock is wrong</div>
+        </div>
+
+        <div class="field-wrap tz-wrap">
+          <label>timezones</label>
+          <div class="tz-controls">
+            <input id="tz-select" list="tz-datalist" placeholder="search timezone…" autocomplete="off" spellcheck="false" />
+            <datalist id="tz-datalist"></datalist>
+            <button id="add-tz-btn">+ add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="description" class="description hidden"></div>
+
+    <div id="results-section" class="results-section hidden">
+      <div class="results-header">
+        <span class="results-label">next occurrences</span>
+        <span id="count-label" class="count-label"></span>
+      </div>
+      <div id="results-table" class="results-table"></div>
+    </div>
+
+    <div class="cron-reference">
+      <div class="ref-label">cron format</div>
+      <div class="ref-diagram">
+        <div class="ref-row">
+          <span class="ref-field">*</span>
+          <span class="ref-field">*</span>
+          <span class="ref-field">*</span>
+          <span class="ref-field">*</span>
+          <span class="ref-field">*</span>
+        </div>
+        <div class="ref-row">
+          <span class="ref-desc">minute<br><span class="ref-range">0–59</span></span>
+          <span class="ref-desc">hour<br><span class="ref-range">0–23</span></span>
+          <span class="ref-desc">day of month<br><span class="ref-range">1–31</span></span>
+          <span class="ref-desc">month<br><span class="ref-range">1–12</span></span>
+          <span class="ref-desc">day of week<br><span class="ref-range">0–7 (sun=0,7)</span></span>
+        </div>
+      </div>
+      <div class="ref-examples">
+        <div class="ref-example"><span class="ref-expr">*/5 * * * *</span><span class="ref-meaning">every 5 minutes</span></div>
+        <div class="ref-example"><span class="ref-expr">0 9 * * 1-5</span><span class="ref-meaning">at 09:00, Monday–Friday</span></div>
+        <div class="ref-example"><span class="ref-expr">30 6 1 * *</span><span class="ref-meaning">at 06:30 on the 1st of each month</span></div>
+        <div class="ref-example"><span class="ref-expr">0 0 * * 0</span><span class="ref-meaning">at midnight every Sunday</span></div>
+        <div class="ref-example"><span class="ref-expr">@daily</span><span class="ref-meaning">once a day at midnight</span></div>
+        <div class="ref-example"><span class="ref-expr">@hourly</span><span class="ref-meaning">once an hour</span></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
