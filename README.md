@@ -1,4 +1,4 @@
-# homepage
+# Toolbox
 
 A collection of browser-based tools. No build system, no package manager, no client-side dependencies — plain HTML, CSS, and vanilla JavaScript, served directly by Apache2.
 
