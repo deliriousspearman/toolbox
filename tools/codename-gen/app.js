@@ -18,6 +18,8 @@
 
   function generate() {
     const errorEl = document.getElementById("gen-error");
+    const limitVal = parseInt(document.getElementById("char-limit").value, 10);
+    const maxLen = limitVal >= 2 ? limitVal : 0;
 
     const filtered = activeCategories.size > 0
       ? WORDS.filter((w) => activeCategories.has(w.category))
@@ -29,11 +31,22 @@
       return;
     }
 
-    errorEl.classList.add("hidden");
+    let w1, w2, attempts = 0;
+    const maxAttempts = 500;
+    do {
+      w1 = pick(filtered);
+      const pool2 = filtered.filter((w) => w.word !== w1.word);
+      w2 = pick(pool2);
+      attempts++;
+    } while (maxLen && (w1.word.length + w2.word.length) > maxLen && attempts < maxAttempts);
 
-    const w1 = pick(filtered);
-    const pool2 = filtered.filter((w) => w.word !== w1.word);
-    const w2 = pick(pool2);
+    if (maxLen && (w1.word.length + w2.word.length) > maxLen) {
+      errorEl.textContent = "No combination fits under " + maxLen + " characters. Try a higher limit or more categories.";
+      errorEl.classList.remove("hidden");
+      return;
+    }
+
+    errorEl.classList.add("hidden");
 
     const full  = w1.word + w2.word;
     const short = w1.word.slice(0, 2) + w2.word.slice(0, 2);
@@ -179,7 +192,11 @@
   async function init() {
     try {
       const res = await fetch("wordlist.json");
-      WORDS = await res.json();
+      const grouped = await res.json();
+      WORDS = [];
+      for (const [category, words] of Object.entries(grouped)) {
+        for (const word of words) WORDS.push({ word, category });
+      }
     } catch {
       WORDS = [];
     }
@@ -198,6 +215,13 @@
 
     document.getElementById("generate-btn").addEventListener("click", generate);
     document.getElementById("clear-btn").addEventListener("click", clearHistory);
+
+    const filterToggle = document.getElementById("filter-toggle");
+    const catFilters   = document.getElementById("cat-filters");
+    filterToggle.addEventListener("click", () => {
+      catFilters.classList.toggle("hidden");
+      filterToggle.classList.toggle("open");
+    });
 
     document.getElementById("lookup-btn").addEventListener("click", lookup);
     document.getElementById("lookup-input").addEventListener("keydown", (e) => {

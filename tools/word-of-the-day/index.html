@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>word of the day</title>
+  <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg" />
+  <link rel="stylesheet" href="../../theme.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <a id="home-btn" href="../../">~/</a>
+    <h1>WORD OF THE DAY</h1>
+    <button id="theme-btn" title="Toggle theme">&#9788;</button>
+  </header>
+
+  <main>
+    <section id="date-section">
+      <span id="date-display"></span>
+    </section>
+
+    <section id="word-card">
+      <div id="word-display"></div>
+      <button id="speak-btn" title="Hear pronunciation">&#9834;</button>
+      <div id="definition-display"></div>
+    </section>
+
+    <section id="nav-section">
+      <button id="prev-btn" title="Previous day">&larr; PREV</button>
+      <button id="today-btn" title="Go to today">TODAY</button>
+      <button id="next-btn" title="Next day">NEXT &rarr;</button>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
+</body>
+</html>

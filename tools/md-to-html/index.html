@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MD → HTML</title>
   <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg" />
+  <link rel="stylesheet" href="../../theme.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -27,21 +28,23 @@
         <option value="custom">Custom</option>
       </select>
       <button id="customize-btn">&#9998; Customize</button>
+      <button id="copy-md-btn">&#8984; Copy</button>
+      <button id="download-md-btn">&#8595; MD</button>
     </div>
     <div class="toolbar-right">
       <button id="copy-btn">&#8984; Copy</button>
-      <button id="download-btn">&#8595; Download</button>
+      <button id="download-btn">&#8595; HTML</button>
     </div>
   </div>
 
   <main>
     <div class="editor-pane">
-      <div class="pane">
-        <div class="pane-label">markdown</div>
+      <div class="pane" id="pane-md">
+        <div class="pane-label">markdown <button class="expand-btn" id="expand-md" title="Expand markdown">&#x25A1;</button></div>
         <textarea id="md-input" spellcheck="false" placeholder="Type or paste Markdown here…"></textarea>
       </div>
-      <div class="pane">
-        <div class="pane-label">html output</div>
+      <div class="pane" id="pane-html">
+        <div class="pane-label">html output <button class="expand-btn" id="expand-html" title="Expand HTML output">&#x25A1;</button></div>
         <textarea id="html-output" readonly spellcheck="false" placeholder="HTML will appear here…"></textarea>
       </div>
     </div>
@@ -100,8 +103,22 @@
     </div>
   </div>
 
+  <!-- Restore session modal -->
+  <div id="restore-modal" class="modal hidden">
+    <div class="modal-box">
+      <h2 class="modal-title">RESTORE SESSION</h2>
+      <p class="restore-msg">You have markdown from a previous session. Would you like to continue where you left off?</p>
+      <div class="modal-actions">
+        <button id="restore-continue">CONTINUE</button>
+        <button id="restore-clear">START FRESH</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ctx-menu" class="ctx-menu hidden"></div>
   <div id="toast" class="toast"></div>
 
   <script src="app.js"></script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
 </body>
 </html>

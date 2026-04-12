@@ -94,6 +94,24 @@
     };
   }
 
+  // ── Impossible expression detection ───────────────────────
+
+  // Max days per month (Feb uses 29 to allow leap years)
+  const MAX_DOM = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+  function isImpossible(fields) {
+    // Only detectable when both dom and month are restricted and dow is unrestricted
+    // (when dow is also restricted, Vixie-cron OR rule means dow matches can still fire)
+    if (!fields.dom || !fields.month || fields.dow) return false;
+
+    for (const m of fields.month) {
+      for (const d of fields.dom) {
+        if (d <= MAX_DOM[m]) return false; // at least one valid combo exists
+      }
+    }
+    return true;
+  }
+
   // ── Next occurrence calculator ────────────────────────────
 
   function nextAfter(set, val, min, max) {
@@ -384,6 +402,14 @@
 
     cronInput.classList.remove("error");
     errorEl.classList.add("hidden");
+
+    if (isImpossible(fields)) {
+      descEl.textContent = "impossible schedule — the day-of-month never exists in the specified month(s)";
+      descEl.classList.remove("hidden");
+      section.classList.add("hidden");
+      lastOccurrences = [];
+      return;
+    }
 
     lastOccurrences = nextOccurrences(fields, new Date(), OCCURRENCE_COUNT);
 

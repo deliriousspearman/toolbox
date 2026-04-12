@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tools</title>
   <link rel="icon" type="image/svg+xml" href="images/favicon.svg" />
+  <link rel="stylesheet" href="theme.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -52,6 +53,13 @@
         </a>
       </li>
 
+      <li class="tool-card">
+        <a href="tools/word-of-the-day/">
+          <div class="tool-name">word of the day</div>
+          <div class="tool-desc">Learn an interesting word every day — browse past words with daily rotation</div>
+        </a>
+      </li>
+
     </ul>
   </main>
 
@@ -79,5 +87,6 @@
         String(d.getDate()).padStart(2, "0");
     })();
   </script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
 </body>
 </html>

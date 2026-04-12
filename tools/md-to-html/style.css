@@ -1,30 +1,3 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-:root {
-  --bg:       #0d0d0d;
-  --surface:  #1a1a1a;
-  --border:   #3a3a3c;
-  --text:     #e0e0e0;
-  --text-dim: #666;
-  --accent:   #00ff88;
-  --font:     'Courier New', 'Lucida Console', monospace;
-}
-
-/* ── Light theme ─────────────────────────────────────── */
-
-body.light {
-  --bg:       #f4f4f4;
-  --surface:  #ffffff;
-  --border:   #d3d3d3;
-  --text:     #1a1a1a;
-  --text-dim: #888;
-  --accent:   #007a44;
-}
-
 /* ── Base layout ─────────────────────────────────────── */
 
 body {
@@ -114,7 +87,6 @@ header .subtitle {
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0.45rem 0.85rem;
   border-bottom: 1px solid var(--border);
   gap: 0.5rem;
@@ -122,12 +94,21 @@ header .subtitle {
   flex-wrap: wrap;
 }
 
+.toolbar-right {
+  justify-content: flex-end;
+}
+
 .toolbar-left,
 .toolbar-right {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  flex: 1;
   flex-wrap: wrap;
+}
+
+#copy-md-btn {
+  margin-left: auto;
 }
 
 .toolbar label {
@@ -200,6 +181,31 @@ main {
   padding: 0.3rem 0.75rem;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.expand-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.65rem;
+  padding: 1px 5px;
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.expand-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pane.collapsed {
+  display: none;
 }
 
 .pane textarea {
@@ -348,6 +354,15 @@ main {
   color: var(--accent);
 }
 
+/* ── Restore modal ──────────────────────────────────── */
+
+.restore-msg {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 1rem 0;
+}
+
 /* ── Toast ───────────────────────────────────────────── */
 
 .toast {
@@ -368,4 +383,98 @@ main {
 
 .toast.visible {
   display: block;
+}
+
+/* ── Context menu ───────────────────────────────────── */
+
+.ctx-menu {
+  position: fixed;
+  z-index: 300;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 0;
+  min-width: 200px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  font-family: var(--font);
+  font-size: 0.78rem;
+}
+
+.ctx-menu.hidden {
+  display: none;
+}
+
+.ctx-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 14px 5px 10px;
+  cursor: pointer;
+  color: var(--text);
+  white-space: nowrap;
+  position: relative;
+  user-select: none;
+}
+
+.ctx-item:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+body.light .ctx-item:hover {
+  color: #fff;
+}
+
+.ctx-item:hover .ctx-shortcut {
+  color: inherit;
+  opacity: 0.7;
+}
+
+.ctx-shortcut {
+  margin-left: 2rem;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+}
+
+.ctx-arrow {
+  margin-left: 1.5rem;
+  color: var(--text-dim);
+  font-size: 0.65rem;
+}
+
+.ctx-item:hover .ctx-arrow {
+  color: inherit;
+}
+
+.ctx-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 8px;
+}
+
+.ctx-submenu {
+  position: absolute;
+  top: -4px;
+  left: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  display: none;
+}
+
+.ctx-item.has-sub.open > .ctx-submenu {
+  display: block;
+}
+
+.ctx-submenu.flip-h {
+  left: auto;
+  right: 100%;
+}
+
+.ctx-submenu.flip-v {
+  top: auto;
+  bottom: -4px;
 }

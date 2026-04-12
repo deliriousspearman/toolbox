@@ -460,6 +460,15 @@
     toastTimer = setTimeout(() => toast.classList.remove("visible"), 2000);
   }
 
+  function copyMD() {
+    const val = document.getElementById("md-input").value;
+    if (!val.trim()) { showToast("Nothing to copy"); return; }
+    navigator.clipboard.writeText(val).then(
+      () => showToast("Copied!"),
+      () => showToast("Copy failed")
+    );
+  }
+
   function copyHTML() {
     const val = document.getElementById("html-output").value;
     if (!val) { showToast("Nothing to copy"); return; }
@@ -481,6 +490,18 @@
     URL.revokeObjectURL(url);
   }
 
+  function downloadMD() {
+    const val = document.getElementById("md-input").value;
+    if (!val.trim()) { showToast("Nothing to download"); return; }
+    const blob = new Blob([val], { type: "text/html" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = "output.md";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function uploadMD() {
     document.getElementById("file-input").click();
   }
@@ -492,6 +513,7 @@
     reader.onload = (ev) => {
       document.getElementById("md-input").value = ev.target.result;
       convert();
+      localStorage.setItem("mdToHtmlContent", ev.target.result);
     };
     reader.readAsText(file);
     e.target.value = ""; // allow re-uploading the same file
@@ -554,6 +576,301 @@
     document.getElementById("customize-modal").classList.add("hidden");
   }
 
+  // ── Context menu ──────────────────────────────────────────────────────────
+
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+  const modKey = isMac ? "\u2318" : "Ctrl";
+
+  const CTX_MENU_DEF = [
+    { label: "Add Link", action: "addLink" },
+    { label: "Add External Link", action: "addExtLink" },
+    { label: "Format", children: [
+      { label: "Bold", action: "bold", shortcut: modKey + "+B" },
+      { label: "Italic", action: "italic", shortcut: modKey + "+I" },
+      { label: "Strikethrough", action: "strikethrough" },
+      { label: "Highlight", action: "highlight" },
+      { label: "Code", action: "code" },
+      { label: "Comment", action: "comment" },
+    ]},
+    { label: "Paragraph", children: [
+      { label: "Bullet List", action: "bulletList" },
+      { label: "Numbered List", action: "numberedList" },
+      { label: "Task List", action: "taskList" },
+      { label: "Heading 1", action: "h1" },
+      { label: "Heading 2", action: "h2" },
+      { label: "Heading 3", action: "h3" },
+      { label: "Heading 4", action: "h4" },
+      { label: "Heading 5", action: "h5" },
+      { label: "Heading 6", action: "h6" },
+      { label: "Quote", action: "quote" },
+    ]},
+    { label: "Insert", children: [
+      { label: "Footnote", action: "footnote" },
+      { label: "Table", action: "table" },
+      { label: "Callout", action: "callout" },
+      { label: "Horizontal Rule", action: "hr" },
+      { label: "Code Block", action: "codeBlock" },
+    ]},
+    { type: "separator" },
+    { label: "Cut", action: "cut", shortcut: modKey + "+X" },
+    { label: "Copy", action: "copy", shortcut: modKey + "+C" },
+    { label: "Paste", action: "paste", shortcut: modKey + "+V" },
+    { label: "Paste as Plain Text", action: "pastePlain", shortcut: modKey + "+Shift+V" },
+    { label: "Select All", action: "selectAll", shortcut: modKey + "+A" },
+  ];
+
+  let ctxState = { start: 0, end: 0, text: "" };
+  let subTimer = null;
+
+  function buildCtxItems(container, items) {
+    for (const item of items) {
+      if (item.type === "separator") {
+        const sep = document.createElement("div");
+        sep.className = "ctx-sep";
+        container.appendChild(sep);
+        continue;
+      }
+
+      const row = document.createElement("div");
+      row.className = "ctx-item";
+
+      const label = document.createElement("span");
+      label.textContent = item.label;
+      row.appendChild(label);
+
+      if (item.children) {
+        row.classList.add("has-sub");
+        const arrow = document.createElement("span");
+        arrow.className = "ctx-arrow";
+        arrow.textContent = "\u25B8";
+        row.appendChild(arrow);
+
+        const sub = document.createElement("div");
+        sub.className = "ctx-submenu";
+        buildCtxItems(sub, item.children);
+        row.appendChild(sub);
+
+        row.addEventListener("mouseenter", function () {
+          clearTimeout(subTimer);
+          // close sibling submenus
+          container.querySelectorAll(":scope > .ctx-item.has-sub.open").forEach(function (el) {
+            if (el !== row) el.classList.remove("open");
+          });
+          row.classList.add("open");
+          // flip if overflowing viewport
+          const rect = sub.getBoundingClientRect();
+          sub.classList.toggle("flip-h", rect.right > window.innerWidth);
+          sub.classList.toggle("flip-v", rect.bottom > window.innerHeight);
+        });
+        row.addEventListener("mouseleave", function () {
+          subTimer = setTimeout(function () { row.classList.remove("open"); }, 150);
+        });
+        sub.addEventListener("mouseenter", function () { clearTimeout(subTimer); });
+      } else {
+        if (item.shortcut) {
+          const sc = document.createElement("span");
+          sc.className = "ctx-shortcut";
+          sc.textContent = item.shortcut;
+          row.appendChild(sc);
+        }
+        row.addEventListener("click", function () {
+          hideCtxMenu();
+          execCtxAction(item.action);
+        });
+      }
+
+      container.appendChild(row);
+    }
+  }
+
+  function showCtxMenu(x, y) {
+    hideCtxMenu();
+    const menu = document.getElementById("ctx-menu");
+    menu.innerHTML = "";
+    buildCtxItems(menu, CTX_MENU_DEF);
+
+    menu.style.left = x + "px";
+    menu.style.top = y + "px";
+    menu.classList.remove("hidden");
+
+    // clamp to viewport
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) menu.style.left = Math.max(0, x - rect.width) + "px";
+    if (rect.bottom > window.innerHeight) menu.style.top = Math.max(0, y - rect.height) + "px";
+  }
+
+  function hideCtxMenu() {
+    const menu = document.getElementById("ctx-menu");
+    menu.classList.add("hidden");
+    menu.innerHTML = "";
+  }
+
+  // ── Text manipulation helpers ───────────────────────────────────────────
+
+  function replaceSelection(before, after, defaultText) {
+    const ta = document.getElementById("md-input");
+    const s = ctxState.start;
+    const e = ctxState.end;
+    const val = ta.value;
+    const selected = val.slice(s, e);
+    const insert = selected || defaultText || "";
+    ta.value = val.slice(0, s) + before + insert + after + val.slice(e);
+    ta.focus();
+    if (selected) {
+      ta.setSelectionRange(s + before.length, s + before.length + selected.length);
+    } else {
+      ta.setSelectionRange(s + before.length, s + before.length + insert.length);
+    }
+    convert();
+  }
+
+  function insertAtCursor(text) {
+    const ta = document.getElementById("md-input");
+    const s = ctxState.start;
+    const e = ctxState.end;
+    const val = ta.value;
+    ta.value = val.slice(0, s) + text + val.slice(e);
+    ta.focus();
+    const pos = s + text.length;
+    ta.setSelectionRange(pos, pos);
+    convert();
+  }
+
+  function prefixLines(prefixFn) {
+    const ta = document.getElementById("md-input");
+    const val = ta.value;
+    const s = ctxState.start;
+    const e = ctxState.end;
+    const lineStart = val.lastIndexOf("\n", s - 1) + 1;
+    let lineEnd = val.indexOf("\n", e);
+    if (lineEnd === -1) lineEnd = val.length;
+    const selected = val.slice(lineStart, lineEnd);
+    const lines = selected.split("\n");
+    const transformed = lines.map(function (line, i) { return prefixFn(line, i); }).join("\n");
+    ta.value = val.slice(0, lineStart) + transformed + val.slice(lineEnd);
+    ta.focus();
+    ta.setSelectionRange(lineStart, lineStart + transformed.length);
+    convert();
+  }
+
+  // ── Action dispatcher ───────────────────────────────────────────────────
+
+  function execCtxAction(action) {
+    const ta = document.getElementById("md-input");
+
+    switch (action) {
+      // Links
+      case "addLink":
+        replaceSelection("[", "](url)", "text");
+        break;
+      case "addExtLink":
+        replaceSelection("[", "](https://)", "text");
+        break;
+
+      // Format
+      case "bold":
+        replaceSelection("**", "**", "text");
+        break;
+      case "italic":
+        replaceSelection("*", "*", "text");
+        break;
+      case "strikethrough":
+        replaceSelection("~~", "~~", "text");
+        break;
+      case "highlight":
+        replaceSelection("==", "==", "text");
+        break;
+      case "code":
+        replaceSelection("`", "`", "code");
+        break;
+      case "comment":
+        replaceSelection("<!-- ", " -->", "comment");
+        break;
+
+      // Paragraph
+      case "bulletList":
+        prefixLines(function (line) { return "- " + line; });
+        break;
+      case "numberedList":
+        prefixLines(function (line, i) { return (i + 1) + ". " + line; });
+        break;
+      case "taskList":
+        prefixLines(function (line) { return "- [ ] " + line; });
+        break;
+      case "h1": case "h2": case "h3": case "h4": case "h5": case "h6":
+        var lvl = +action[1];
+        prefixLines(function (line) { return "#".repeat(lvl) + " " + line; });
+        break;
+      case "quote":
+        prefixLines(function (line) { return "> " + line; });
+        break;
+
+      // Insert
+      case "footnote":
+        var existing = (ta.value.match(/\[\^(\d+)\]/g) || []);
+        var nums = existing.map(function (m) { return parseInt(m.match(/\d+/)[0], 10); });
+        var next = nums.length ? Math.max.apply(null, nums) + 1 : 1;
+        var ref = "[^" + next + "]";
+        var val = ta.value;
+        var s = ctxState.start;
+        var e = ctxState.end;
+        ta.value = val.slice(0, s) + ref + val.slice(e) + "\n\n" + ref + ": ";
+        ta.focus();
+        var endPos = ta.value.length;
+        ta.setSelectionRange(endPos, endPos);
+        convert();
+        break;
+      case "table":
+        insertAtCursor("\n| Header | Header |\n| ------ | ------ |\n| Cell   | Cell   |\n");
+        break;
+      case "callout":
+        insertAtCursor("\n> [!NOTE]\n> Content\n");
+        break;
+      case "hr":
+        insertAtCursor("\n---\n");
+        break;
+      case "codeBlock":
+        insertAtCursor("\n```\n\n```\n");
+        break;
+
+      // Clipboard
+      case "cut":
+        if (ctxState.text) {
+          navigator.clipboard.writeText(ctxState.text).then(function () {
+            var val = ta.value;
+            ta.value = val.slice(0, ctxState.start) + val.slice(ctxState.end);
+            ta.focus();
+            ta.setSelectionRange(ctxState.start, ctxState.start);
+            convert();
+          }, function () { showToast("Clipboard access denied"); });
+        }
+        break;
+      case "copy":
+        if (ctxState.text) {
+          navigator.clipboard.writeText(ctxState.text).then(
+            function () { showToast("Copied!"); },
+            function () { showToast("Clipboard access denied"); }
+          );
+        }
+        break;
+      case "paste":
+      case "pastePlain":
+        navigator.clipboard.readText().then(function (text) {
+          var val = ta.value;
+          ta.value = val.slice(0, ctxState.start) + text + val.slice(ctxState.end);
+          ta.focus();
+          var pos = ctxState.start + text.length;
+          ta.setSelectionRange(pos, pos);
+          convert();
+        }, function () { showToast("Clipboard access denied"); });
+        break;
+      case "selectAll":
+        ta.focus();
+        ta.setSelectionRange(0, ta.value.length);
+        break;
+    }
+  }
+
   // ── Site-wide light/dark theme ────────────────────────────────────────────
 
   function applyTheme(isLight) {
@@ -563,6 +880,23 @@
   }
 
   // ── Init ──────────────────────────────────────────────────────────────────
+
+  // ── Expand / collapse panes ───────────────────────────────────────────────
+
+  function toggleExpand(paneId) {
+    const md   = document.getElementById("pane-md");
+    const html = document.getElementById("pane-html");
+    const target = paneId === "md" ? md : html;
+    const other  = paneId === "md" ? html : md;
+
+    if (other.classList.contains("collapsed")) {
+      // restore both
+      other.classList.remove("collapsed");
+    } else {
+      // collapse the other pane
+      other.classList.add("collapsed");
+    }
+  }
 
   function init() {
     customTheme = deepCopy(THEMES.dracula);
@@ -574,7 +908,10 @@
       localStorage.setItem("siteTheme", nowLight ? "light" : "dark");
     });
 
-    document.getElementById("md-input").addEventListener("input", convert);
+    document.getElementById("md-input").addEventListener("input", () => {
+      convert();
+      localStorage.setItem("mdToHtmlContent", document.getElementById("md-input").value);
+    });
 
     document.getElementById("theme-select").addEventListener("change", (e) => {
       currentThemeName = e.target.value;
@@ -583,8 +920,12 @@
 
     document.getElementById("upload-btn").addEventListener("click", uploadMD);
     document.getElementById("file-input").addEventListener("change", onFileSelected);
+    document.getElementById("expand-md").addEventListener("click", () => toggleExpand("md"));
+    document.getElementById("expand-html").addEventListener("click", () => toggleExpand("html"));
+    document.getElementById("copy-md-btn").addEventListener("click", copyMD);
     document.getElementById("copy-btn").addEventListener("click", copyHTML);
     document.getElementById("download-btn").addEventListener("click", downloadHTML);
+    document.getElementById("download-md-btn").addEventListener("click", downloadMD);
 
     document.getElementById("customize-btn").addEventListener("click", openCustomizer);
     document.getElementById("customize-close").addEventListener("click", closeCustomizer);
@@ -595,11 +936,28 @@
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeCustomizer();
+      if (e.key === "Escape") { closeCustomizer(); hideCtxMenu(); }
     });
 
-    // Pre-fill with a demo document
-    document.getElementById("md-input").value = `# Welcome to MD → HTML
+    // Context menu on markdown input
+    document.getElementById("md-input").addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      const ta = e.target;
+      ctxState.start = ta.selectionStart;
+      ctxState.end = ta.selectionEnd;
+      ctxState.text = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+      showCtxMenu(e.clientX, e.clientY);
+    });
+
+    document.addEventListener("mousedown", (e) => {
+      const menu = document.getElementById("ctx-menu");
+      if (!menu.classList.contains("hidden") && !menu.contains(e.target)) hideCtxMenu();
+    });
+
+    window.addEventListener("resize", hideCtxMenu);
+    document.getElementById("md-input").addEventListener("scroll", hideCtxMenu);
+
+    const DEMO = `# Welcome to MD → HTML
 
 Convert **Markdown** to styled HTML with inline CSS — no external stylesheets needed.
 
@@ -635,7 +993,30 @@ Inline \`code\` is styled too.
 
 *Enjoy!*`;
 
-    convert();
+    function loadContent(text) {
+      document.getElementById("md-input").value = text;
+      convert();
+    }
+
+    const saved = localStorage.getItem("mdToHtmlContent");
+
+    if (saved && saved.trim()) {
+      const modal = document.getElementById("restore-modal");
+      modal.classList.remove("hidden");
+
+      document.getElementById("restore-continue").addEventListener("click", () => {
+        loadContent(saved);
+        modal.classList.add("hidden");
+      });
+
+      document.getElementById("restore-clear").addEventListener("click", () => {
+        localStorage.removeItem("mdToHtmlContent");
+        loadContent(DEMO);
+        modal.classList.add("hidden");
+      });
+    } else {
+      loadContent(DEMO);
+    }
   }
 
   document.addEventListener("DOMContentLoaded", init);

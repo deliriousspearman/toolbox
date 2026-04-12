@@ -1,38 +1,13 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 :root {
-  --bg:           #0d0d0d;
-  --surface:      #1a1a1a;
-  --border:       #3a3a3c;
-  --text:         #e0e0e0;
-  --text-dim:     #666;
-  --accent:       #00ff88;
   --green:        #538d4e;
   --yellow:       #b59f3b;
   --absent:       #3a3a3c;
   --key-bg:       #2a2a2c;
-  --font:         'Courier New', 'Lucida Console', monospace;
 }
-
-/* ── Light theme overrides ───────────────────────────── */
 
 body.light {
-  --bg:       #f4f4f4;
-  --surface:  #ffffff;
-  --border:   #d3d3d3;
-  --text:     #1a1a1a;
-  --text-dim: #888;
-  --accent:   #007a44;
   --absent:   #787c7e;
   --key-bg:   #d3d6da;
-}
-
-body.light header h1 {
-  text-shadow: none;
 }
 
 body.light .cell.absent {
@@ -129,7 +104,6 @@ header h1 {
   font-size: clamp(1.1rem, 4vw, 1.5rem);
   letter-spacing: 0.4em;
   color: var(--accent);
-  text-shadow: 0 0 10px var(--accent);
 }
 
 header h1::before {
