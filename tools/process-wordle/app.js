@@ -1,9 +1,49 @@
 (function () {
   "use strict";
 
+  /* Short getElementById wrapper that throws a descriptive error when
+     the id goes missing, so an HTML/JS drift becomes a greppable
+     message instead of a null-access crash inside a modal render.   */
+  function $(id) {
+    const el = document.getElementById(id);
+    if (!el) throw new Error("procwordle: missing element #" + id);
+    return el;
+  }
+
   const MAX_GUESSES = 5;
-  const STORAGE_KEY = "processWordle";
-  const EPOCH       = new Date("2025-01-01T00:00:00Z");
+  /* State was keyed on "processWordle" (one slot, today only). With the
+     archive feature we key per-day as "processWordle:YYYY-MM-DD", so a
+     past day's board survives navigation and replaying the same past
+     day keeps its guesses.                                             */
+  const STORAGE_KEY_BASE = "processWordle";
+  function storageKey(dateStr) { return STORAGE_KEY_BASE + ":" + dateStr; }
+  // Local-midnight epoch so the date string and the daily word index both
+  // advance at the player's local midnight. Using a UTC epoch here while
+  // getDailyWord uses local midnight caused a daily window where the two
+  // disagreed for users west of UTC.
+  const EPOCH       = new Date(2025, 0, 1);
+
+  /* Seeded shuffle of the word list so the daily rotation doesn't walk
+     through words.js in source order (which is grouped by length — 56
+     three-letter entries first, then 83 four-letter, etc. — producing
+     long runs of the same length). A fixed-seed LCG keeps the shuffle
+     deterministic: every player sees the same word on the same day.
+     Changing WORDS.length reshuffles the whole sequence, so edits to
+     words.js will change past/future daily answers — the per-day save
+     validates against the current word and resets stale boards.       */
+  const DAILY_WORDS = (function () {
+    const a = WORDS.slice();
+    let s = 0xC0FFEE >>> 0;
+    function rand() {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 0x100000000;
+    }
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  })();
 
   const KEYBOARD_ROWS = [
     ["q","w","e","r","t","y","u","i","o","p"],
@@ -28,15 +68,32 @@
 
   // ── Utilities ───────────────────────────────────────────
 
-  function getTodayString() {
-    return new Date().toISOString().slice(0, 10);
+  function formatLocalDate(date) {
+    const y  = date.getFullYear();
+    const m  = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${dd}`;
   }
 
-  function getDailyWord() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const index = Math.floor((today - EPOCH) / 86400000) % WORDS.length;
-    return WORDS[index];
+  function getTodayString() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return formatLocalDate(d);
+  }
+
+  function getTargetDate(offset) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return new Date(d.getTime() + offset * 86400000);
+  }
+
+  function getDailyWordAt(offset) {
+    const target = getTargetDate(offset);
+    const days = Math.floor((target - EPOCH) / 86400000);
+    // Normalise modulo so a pre-epoch clock (negative days) still maps to a
+    // valid index rather than producing undefined.
+    const index = ((days % DAILY_WORDS.length) + DAILY_WORDS.length) % DAILY_WORDS.length;
+    return DAILY_WORDS[index];
   }
 
   // ── Feedback ────────────────────────────────────────────
@@ -71,8 +128,13 @@
   // ── Storage ─────────────────────────────────────────────
 
   function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    safeStorage.save(storageKey(state.date), JSON.stringify({
       date:         state.date,
+      /* Stored so we can invalidate the board if the underlying daily
+         word for this date changes (e.g. words.js was edited, or the
+         shuffle seed / length shifted). Without it a user could see
+         their old guesses coloured against a different answer.       */
+      word:         state.word,
       guesses:      state.guesses,
       currentInput: state.currentInput,
       gameOver:     state.gameOver,
@@ -82,18 +144,155 @@
     }));
   }
 
-  function loadState() {
-    const raw = localStorage.getItem(STORAGE_KEY);
+  function loadStateForDay(dateStr) {
+    const raw = safeStorage.get(storageKey(dateStr));
+    if (!raw) return null;
+    try { return JSON.parse(raw); }
+    catch (e) { console.warn("procwordle: saved state unparseable for " + dateStr, e); return null; }
+  }
+
+  /* One-shot migration: older builds stored today's game under the bare
+     "processWordle" key. Move that record to its per-day slot and drop
+     the legacy key, so the rest of the code can assume per-day storage. */
+  function migrateLegacyState() {
+    const raw = safeStorage.get(STORAGE_KEY_BASE);
     if (!raw) return;
-    let saved;
-    try { saved = JSON.parse(raw); } catch { return; }
-    if (saved.date !== getTodayString()) return; // stale day
-    state.guesses      = saved.guesses      || [];
-    state.currentInput = saved.currentInput || "";
-    state.gameOver     = saved.gameOver     || false;
-    state.won          = saved.won          || false;
-    state.hintRevealed = saved.hintRevealed || false;
-    state.hintRow      = saved.hintRow      ?? -1;
+    try {
+      const saved = JSON.parse(raw);
+      if (saved && typeof saved.date === "string") {
+        const targetKey = storageKey(saved.date);
+        if (!safeStorage.get(targetKey)) {
+          safeStorage.save(targetKey, raw);
+        }
+      }
+    } catch (e) { console.warn("procwordle: legacy state unparseable, dropping", e); }
+    safeStorage.remove(STORAGE_KEY_BASE);
+  }
+
+  // ── Stats (persistent, survive the archive prune) ────────
+  /* Separate from the per-day boards because those roll off after
+     MAX_DAYS_BACK. Stats live forever under "procWordleStats" —
+     a dict keyed by date so replays overwrite rather than duplicate. */
+
+  const STATS_KEY = "procWordleStats";
+
+  function loadStats() {
+    try { return JSON.parse(safeStorage.get(STATS_KEY) || "{}"); }
+    catch (e) { console.warn("procwordle: stats unparseable, starting over", e); return {}; }
+  }
+
+  function recordStat() {
+    const stats = loadStats();
+    stats[state.date] = {
+      date:     state.date,
+      won:      !!state.won,
+      guesses:  state.guesses.length,
+      hintUsed: !!state.hintRevealed,
+      hardMode: !!hardMode,
+    };
+    safeStorage.save(STATS_KEY, JSON.stringify(stats));
+  }
+
+  function computeStats() {
+    const stats = loadStats();
+    const entries = Object.values(stats);
+    const played = entries.length;
+    const wins   = entries.filter(e => e.won).length;
+    /* Distribution of winning guess counts, 1..MAX_GUESSES. Losses
+       aren't bucketed — they appear in the "played - wins" difference. */
+    const dist = Array(MAX_GUESSES).fill(0);
+    for (const e of entries) {
+      if (e.won && e.guesses >= 1 && e.guesses <= MAX_GUESSES) dist[e.guesses - 1]++;
+    }
+    /* Current streak walks back from today until it hits a day that
+       wasn't won (or wasn't played). Max streak scans all recorded
+       wins for the longest consecutive run of dates.                 */
+    let current = 0;
+    const cursor = new Date();
+    cursor.setHours(0, 0, 0, 0);
+    while (true) {
+      const key = formatLocalDate(cursor);
+      const e   = stats[key];
+      if (!e || !e.won) break;
+      current++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    const winDates = Object.keys(stats).filter(k => stats[k].won).sort();
+    let max = 0, run = 0, prev = null;
+    for (const k of winDates) {
+      if (prev) {
+        const pDate = new Date(prev + "T00:00:00");
+        pDate.setDate(pDate.getDate() + 1);
+        run = formatLocalDate(pDate) === k ? run + 1 : 1;
+      } else {
+        run = 1;
+      }
+      if (run > max) max = run;
+      prev = k;
+    }
+    return { played, wins, dist, current, max };
+  }
+
+  function renderStatsModal() {
+    const s = computeStats();
+    const winPct = s.played === 0 ? 0 : Math.round((s.wins / s.played) * 100);
+    document.getElementById("stat-played").textContent = s.played;
+    document.getElementById("stat-winpct").textContent = winPct;
+    document.getElementById("stat-cur").textContent    = s.current;
+    document.getElementById("stat-max").textContent    = s.max;
+
+    /* Distribution bars: width proportional to count relative to max
+       bucket; bucket matching the current game (if won) is accented. */
+    const wrap = document.getElementById("stats-dist");
+    wrap.textContent = "";
+    const peak = Math.max(1, ...s.dist);
+    const currentBucket = (state.gameOver && state.won) ? state.guesses.length : -1;
+    for (let i = 0; i < s.dist.length; i++) {
+      const count = s.dist[i];
+      const row = document.createElement("div");
+      row.className = "dist-row";
+      const label = document.createElement("div");
+      label.className = "dist-row-label";
+      label.textContent = String(i + 1);
+      const bar = document.createElement("div");
+      bar.className = "dist-row-bar" + ((i + 1) === currentBucket ? " hilite" : "");
+      bar.style.width = Math.max(8, (count / peak) * 100) + "%";
+      bar.textContent = String(count);
+      row.append(label, bar);
+      wrap.appendChild(row);
+    }
+  }
+
+  function openStats() {
+    renderStatsModal();
+    document.getElementById("stats-modal").classList.remove("hidden");
+  }
+
+  function closeStats() {
+    document.getElementById("stats-modal").classList.add("hidden");
+  }
+
+  /* Drop any per-day save that's outside the current archive window.
+     YYYY-MM-DD strings sort lexicographically so string compare works
+     in place of date math. Called once from init() after migration
+     but before applyDayState, so today's load never hits pruned data. */
+  function pruneStaleArchive() {
+    const prefix  = STORAGE_KEY_BASE + ":";
+    const today   = getTodayString();
+    const cutoff  = formatLocalDate(getTargetDate(-MAX_DAYS_BACK));
+    const toRemove = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith(prefix)) continue;
+        const dateStr = k.slice(prefix.length);
+        if (dateStr < cutoff || dateStr > today) toRemove.push(k);
+      }
+    } catch (e) {
+      console.warn("pruneStaleArchive enumeration failed", e);
+      return;
+    }
+    for (const k of toRemove) safeStorage.remove(k);
   }
 
   // ── Helpers ─────────────────────────────────────────────
@@ -136,7 +335,9 @@
           for (let c = 0; c < state.wordLen; c++) {
             const cell = document.createElement("div");
             cell.className = `cell ${feedback[c]}`;
-            cell.textContent = state.guesses[g][c].toUpperCase();
+            const letter = state.guesses[g][c];
+            cell.textContent = letter.toUpperCase();
+            cell.setAttribute("aria-label", `${letter.toUpperCase()}, ${feedback[c]}`);
             row.appendChild(cell);
           }
         } else if (g === state.guesses.length && !state.gameOver) {
@@ -146,6 +347,7 @@
             const letter = state.currentInput[c] || "";
             cell.className  = `cell ${letter ? "filled" : "empty"}`;
             cell.textContent = letter.toUpperCase();
+            if (letter) cell.setAttribute("aria-label", `${letter.toUpperCase()}, pending`);
             row.appendChild(cell);
           }
         } else {
@@ -325,8 +527,20 @@
 
   // ── Input ────────────────────────────────────────────────
 
+  // Flag so we only toast the "game over" hint once per session rather
+  // than on every ignored keystroke.
+  let gameOverToastShown = false;
+
   function handleKey(key) {
-    if (state.gameOver) return;
+    if (state.gameOver) {
+      // Only announce for actual gameplay keys; modifier keys and Escape
+      // are handled by other listeners and shouldn't trigger the toast.
+      if (!gameOverToastShown && (key === "Enter" || key === "Backspace" || /^[a-zA-Z]$/.test(key))) {
+        showToast(state.won ? "already solved — new word tomorrow" : "game over — new word tomorrow");
+        gameOverToastShown = true;
+      }
+      return;
+    }
 
     if (key === "Enter") {
       submitGuess();
@@ -371,6 +585,16 @@
       state.gameOver = true;
       state.won      = false;
     }
+
+    if (state.gameOver) recordStat();
+
+    // Announce the guess result for screen readers via the live region.
+    const feedback = computeFeedback(guess, state.word);
+    const parts = guess.split("").map((ch, i) => `${ch.toUpperCase()} ${feedback[i]}`);
+    const msg = `Guess ${rowIndex + 1}: ${parts.join(", ")}` +
+      (won ? ". You won!" : state.gameOver ? `. Game over, the answer was ${state.word.toUpperCase()}.` : "");
+    const sr = document.getElementById("sr-status");
+    if (sr) sr.textContent = msg;
 
     saveState();
     renderAll();
@@ -429,13 +653,13 @@
   let toastTimer     = null;
 
   function showEndModal() {
-    const modal = document.getElementById("modal");
+    const modal = $("modal");
     modal.classList.remove("hidden");
 
-    document.getElementById("modal-status").textContent =
+    $("modal-status").textContent =
       state.won ? "> PROCESS IDENTIFIED" : "> ACCESS DENIED";
 
-    const wordEl = document.getElementById("modal-word");
+    const wordEl = $("modal-word");
     if (!state.won) {
       wordEl.textContent = `Answer: ${state.word.toUpperCase()}`;
     } else {
@@ -568,11 +792,11 @@
 
   function closeHowToPlay() {
     document.getElementById("how-to-play").classList.add("hidden");
-    localStorage.setItem("procWordleHTP", "1");
+    safeStorage.save("procWordleHTP", "1");
   }
 
   function initHowToPlay() {
-    if (!localStorage.getItem("procWordleHTP")) {
+    if (!safeStorage.get("procWordleHTP")) {
       document.getElementById("how-to-play").classList.remove("hidden");
     }
     document.getElementById("htplay-close").addEventListener("click", closeHowToPlay);
@@ -582,12 +806,6 @@
   }
 
   // ── Settings ──────────────────────────────────────────────
-
-  function applyTheme(isLight) {
-    document.body.classList.toggle("light", isLight);
-    const btn = document.getElementById("theme-btn");
-    if (btn) btn.textContent = isLight ? "\u263D" : "\u2600";
-  }
 
   function applyHighContrast(on) {
     highContrast = on;
@@ -620,16 +838,10 @@
   }
 
   function initSettings() {
-    applyTheme(localStorage.getItem("siteTheme") === "light");
-    applyHighContrast(localStorage.getItem("procWordleHC") === "1");
-    applyHardMode(localStorage.getItem("procWordleHard") === "1");
-    applySound(localStorage.getItem("procWordleSound") !== "0");
-
-    document.getElementById("theme-btn").addEventListener("click", () => {
-      const nowLight = !document.body.classList.contains("light");
-      applyTheme(nowLight);
-      localStorage.setItem("siteTheme", nowLight ? "light" : "dark");
-    });
+    siteTheme.init();
+    applyHighContrast(safeStorage.get("procWordleHC") === "1");
+    applyHardMode(safeStorage.get("procWordleHard") === "1");
+    applySound(safeStorage.get("procWordleSound") !== "0");
 
     document.getElementById("settings-btn").addEventListener("click", openSettings);
     document.getElementById("settings-close").addEventListener("click", closeSettings);
@@ -639,42 +851,128 @@
 
     document.getElementById("toggle-contrast").addEventListener("click", () => {
       applyHighContrast(!highContrast);
-      localStorage.setItem("procWordleHC", highContrast ? "1" : "0");
+      safeStorage.save("procWordleHC", highContrast ? "1" : "0");
     });
 
     document.getElementById("toggle-hard").addEventListener("click", () => {
       if (document.getElementById("toggle-hard").disabled) return;
       applyHardMode(!hardMode);
-      localStorage.setItem("procWordleHard", hardMode ? "1" : "0");
+      safeStorage.save("procWordleHard", hardMode ? "1" : "0");
     });
 
     document.getElementById("toggle-sound").addEventListener("click", () => {
       applySound(!soundEnabled);
-      localStorage.setItem("procWordleSound", soundEnabled ? "1" : "0");
+      safeStorage.save("procWordleSound", soundEnabled ? "1" : "0");
     });
+  }
+
+  // ── Day navigation ───────────────────────────────────────
+
+  /* Archive window: users can go back up to this many days (plus
+     today) — one week of playable puzzles. Increase carefully: the
+     per-day state keys under this window stay in localStorage. */
+  const MAX_DAYS_BACK = 6;
+
+  let dayOffset = 0;
+
+  /* Load the board for the currently-viewed day: set the target word
+     from the daily rotation, reset in-memory state, then overlay any
+     saved guesses/flags for that day. Called on init and every nav. */
+  function applyDayState() {
+    const target = getTargetDate(dayOffset);
+    const daily  = getDailyWordAt(dayOffset);
+
+    state.word    = daily.word;
+    state.hint    = daily.hint;
+    state.wordLen = daily.word.length;
+    state.date    = formatLocalDate(target);
+
+    state.guesses      = [];
+    state.currentInput = "";
+    state.gameOver     = false;
+    state.won          = false;
+    state.hintRevealed = false;
+    state.hintRow      = -1;
+
+    const saved = loadStateForDay(state.date);
+    /* Only restore when the save is for this date AND its recorded
+       word still matches what the rotation produces now. Any mismatch
+       means words.js or the shuffle changed under us — keeping the
+       guesses would colour them against a different answer, which is
+       worse than a fresh board. Pre-word-field saves fall here too.   */
+    if (saved && saved.date === state.date && saved.word === state.word) {
+      state.guesses      = saved.guesses      || [];
+      state.currentInput = saved.currentInput || "";
+      state.gameOver     = saved.gameOver     || false;
+      state.won          = saved.won          || false;
+      state.hintRevealed = saved.hintRevealed || false;
+      state.hintRow      = saved.hintRow      ?? -1;
+    }
+
+    document.getElementById("hint-text").textContent = state.hint;
+    renderAll();
+    updateDayNavUI();
+  }
+
+  function updateDayNavUI() {
+    const prevBtn  = document.getElementById("prev-day-btn");
+    const nextBtn  = document.getElementById("next-day-btn");
+    const todayBtn = document.getElementById("today-day-btn");
+    const label    = document.getElementById("day-label");
+
+    if (prevBtn)  prevBtn.disabled  = dayOffset <= -MAX_DAYS_BACK;
+    if (nextBtn)  nextBtn.disabled  = dayOffset >= 0;
+    if (todayBtn) todayBtn.disabled = dayOffset === 0;
+
+    if (label) {
+      let suffix = "";
+      if (dayOffset === 0)       suffix = " (today)";
+      else if (dayOffset === -1) suffix = " (yesterday)";
+      label.textContent = state.date + suffix;
+    }
+  }
+
+  function navToDay(offset) {
+    if (offset > 0) offset = 0;
+    if (offset < -MAX_DAYS_BACK) offset = -MAX_DAYS_BACK;
+    if (offset === dayOffset) return;
+    dayOffset = offset;
+    /* Close the end modal so yesterday's completion doesn't overlay
+       whatever we navigated to. Settings / how-to-play are left open. */
+    closeModal();
+    /* Reset the once-per-day "game over" toast so the new day can
+       announce its own state if it's also completed.              */
+    gameOverToastShown = false;
+    applyDayState();
   }
 
   // ── Init ─────────────────────────────────────────────────
 
   function init() {
-    const daily   = getDailyWord();
-    state.word    = daily.word;
-    state.hint    = daily.hint;
-    state.wordLen = daily.word.length;
-    state.date    = getTodayString();
+    migrateLegacyState();
+    pruneStaleArchive();
 
     initSettings();
     initHowToPlay();
-    loadState();
 
-    document.getElementById("hint-text").textContent = state.hint;
     document.getElementById("hint-btn").addEventListener("click", revealHint);
+    document.getElementById("prev-day-btn").addEventListener("click", () => navToDay(dayOffset - 1));
+    document.getElementById("today-day-btn").addEventListener("click", () => navToDay(0));
+    document.getElementById("next-day-btn").addEventListener("click", () => navToDay(dayOffset + 1));
+
+    document.getElementById("stats-btn").addEventListener("click", openStats);
+    document.getElementById("stats-close").addEventListener("click", closeStats);
+    document.getElementById("stats-modal").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("stats-modal")) closeStats();
+    });
 
     buildKeyboard();
-    renderAll();
 
-    // Show modal immediately if the game was already finished today
-    if (state.gameOver) {
+    dayOffset = 0;
+    applyDayState();
+
+    // Show modal immediately if today's game was already finished on load
+    if (dayOffset === 0 && state.gameOver) {
       showEndModal();
     }
 
@@ -689,7 +987,7 @@
 
     // ESC closes modal
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") { closeModal(); closeHowToPlay(); closeSettings(); }
+      if (e.key === "Escape") { closeModal(); closeHowToPlay(); closeSettings(); closeStats(); }
     });
   }
 

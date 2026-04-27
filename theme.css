@@ -1,3 +1,27 @@
+/* ── Web fonts ───────────────────────────────────────── */
+/* Self-hosted under /fonts/. Share Tech Mono is the body face;
+   VT323 is the CRT-bitmap display face used only for marquee moments
+   (h1, date stamps, tool names). font-display: swap so the terminal
+   fallback (Courier New) paints immediately on cold loads.           */
+
+@font-face {
+  font-family: 'Share Tech Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/share-tech-mono-400.woff2') format('woff2'),
+       local('Share Tech Mono');
+}
+
+@font-face {
+  font-family: 'VT323';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/vt323-400.woff2') format('woff2'),
+       local('VT323');
+}
+
 /* ── Shared design tokens & reset ────────────────────── */
 
 *, *::before, *::after {
@@ -7,30 +31,269 @@
 }
 
 :root {
-  --bg:       #0d0d0d;
-  --surface:  #1a1a1a;
-  --border:   #3a3a3c;
-  --text:     #e0e0e0;
-  --text-dim: #666;
-  --accent:   #00ff88;
-  --font:     'Courier New', 'Lucida Console', monospace;
+  --bg:          #0d0d0d;
+  --surface:     #1a1a1a;
+  --hover-bg:    #1f1f1f;
+  --border:      #3a3a3c;
+  --text:        #e0e0e0;
+  --text-dim:    #666;
+  --accent:      #00ff88;
+  --accent-glow: #00ff88;
+  --font:         'Share Tech Mono', 'Courier New', 'Lucida Console', monospace;
+  --font-display: 'VT323', 'Courier New', 'Lucida Console', monospace;
 }
 
 header h1 {
+  font-family: var(--font-display);
   text-shadow: 0 0 10px var(--accent);
 }
 
-/* ── Light theme overrides ───────────────────────────── */
+/* ── Light theme — warm "paper" identity ─────────────── */
+/* Not a grey inversion of dark; the palette is deliberately
+   warmer (cream paper, inky brown-black, tan borders) and the
+   body gets a subtle SVG noise texture so the surface reads as
+   printed rather than bleached.                                 */
 
 body.light {
-  --bg:       #f4f4f4;
-  --surface:  #ffffff;
-  --border:   #d3d3d3;
-  --text:     #1a1a1a;
-  --text-dim: #888;
-  --accent:   #007a44;
+  --bg:          #f4ead8;
+  --surface:     #fbf7ee;
+  --hover-bg:    #ede2ca;
+  --border:      #c9b98e;
+  --text:        #1c1812;
+  --text-dim:    #6b5f47;
+  --accent:      #007a44;
+  --accent-glow: #00b25f;
+
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.42  0 0 0 0 0.35  0 0 0 0 0.2  0 0 0 0.07 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-attachment: fixed;
 }
 
 body.light header h1 {
-  text-shadow: none;
+  text-shadow: 0 1px 0 var(--accent-glow);
+}
+
+/* ── Keyboard focus indicator ────────────────────────── */
+/* Applies to every interactive element across all tools. Using
+   :focus-visible (not :focus) means the ring only appears for
+   keyboard users, not on mouse clicks — no visual noise.
+   Tools with bespoke focus styling can override per-element.    */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+textarea:focus-visible,
+input[type="color"]:focus-visible,
+input[type="text"]:focus-visible,
+input[type="number"]:focus-visible {
+  outline-offset: 0;
+}
+
+/* ── Motion primitives ───────────────────────────────── */
+/* Shared keyframes + utilities reused across tools. The
+   reduced-motion media query at the bottom zeros all of them. */
+
+@keyframes boot {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes crtPhosphor {
+  0%, 100% { text-shadow: 0 0 8px var(--accent); }
+  50%      { text-shadow: 0 0 16px var(--accent), 0 0 24px var(--accent); }
+}
+
+/* Stagger children on a container: each child boots in with an
+   animation-delay keyed to its :nth-child position. 60ms step,
+   up to ten children — enough for the tool list + most tables. */
+.reveal > * {
+  opacity: 0;
+  animation: boot 0.4s cubic-bezier(.2, .8, .2, 1) forwards;
+}
+.reveal > *:nth-child(1)  { animation-delay: 0.06s; }
+.reveal > *:nth-child(2)  { animation-delay: 0.12s; }
+.reveal > *:nth-child(3)  { animation-delay: 0.18s; }
+.reveal > *:nth-child(4)  { animation-delay: 0.24s; }
+.reveal > *:nth-child(5)  { animation-delay: 0.30s; }
+.reveal > *:nth-child(6)  { animation-delay: 0.36s; }
+.reveal > *:nth-child(7)  { animation-delay: 0.42s; }
+.reveal > *:nth-child(8)  { animation-delay: 0.48s; }
+.reveal > *:nth-child(9)  { animation-delay: 0.54s; }
+.reveal > *:nth-child(10) { animation-delay: 0.60s; }
+
+.caret {
+  display: inline-block;
+  color: var(--accent);
+  animation: blink 1s steps(1, end) infinite;
+}
+
+/* ── Depth system — inset accent glow ────────────────── */
+/* Opt-in class. Default cards stay flat; surfaces that should
+   "light up" on hover add .surface-interactive. Uses inset
+   shadow for the bright inner edge + a soft outer bloom.      */
+
+.surface-interactive {
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.2s;
+}
+
+.surface-interactive:hover {
+  box-shadow: inset 0 0 0 1px var(--accent),
+              0 0 24px -8px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+body.light .surface-interactive:hover {
+  box-shadow: inset 0 0 0 1px var(--accent),
+              0 2px 0 0 var(--accent-glow);
+}
+
+/* ── Reduced motion ──────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal > * {
+    opacity: 1;
+  }
+}
+
+/* ── Konami / CRT easter egg ─────────────────────────── */
+/* Triggered site-wide by theme.js. Chromatic-aberration keyframe
+   lives here (canonical) so any tool can reuse it too.           */
+
+@keyframes chromaticGlitch {
+  0%   { text-shadow: 0 0 10px var(--accent); }
+  20%  { text-shadow: -3px 0 #ff3366,  3px 0 #00e5ff, 0 0 10px var(--accent); }
+  40%  { text-shadow:  3px 0 #ff3366, -3px 0 #00e5ff, 0 0 10px var(--accent); }
+  60%  { text-shadow: -2px 2px #ff3366,  2px -2px #00e5ff, 0 0 10px var(--accent); }
+  80%  { text-shadow:  2px 1px #ff3366, -2px -1px #00e5ff, 0 0 10px var(--accent); }
+  100% { text-shadow: 0 0 10px var(--accent); }
+}
+
+body.glitching h1 {
+  animation: chromaticGlitch 0.42s steps(5, end) 4;
+}
+
+/* Persistent scanline overlay — stays until dismissed via .crt-dismiss
+   or re-entering the Konami code. mix-blend-mode: overlay disappeared
+   on dark backgrounds (overlay multiplies darks), so the layer is now
+   drawn straight with enough alpha to read on both themes. A very
+   subtle flicker keeps it feeling alive without being distracting.   */
+
+@keyframes crtFlicker {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.82; }
+}
+
+body.crt-mode::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0)       0,
+      rgba(0, 0, 0, 0)       2px,
+      rgba(0, 255, 136, 0.10) 2px,
+      rgba(0, 255, 136, 0.10) 3px
+    ),
+    radial-gradient(
+      circle at center,
+      transparent 55%,
+      rgba(0, 0, 0, 0.35) 100%
+    );
+  animation: crtFlicker 3.5s linear infinite;
+}
+
+body.light.crt-mode::after {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0)       0,
+      rgba(0, 0, 0, 0)       2px,
+      rgba(28, 24, 18, 0.11) 2px,
+      rgba(28, 24, 18, 0.11) 3px
+    ),
+    radial-gradient(
+      circle at center,
+      transparent 55%,
+      rgba(90, 70, 30, 0.22) 100%
+    );
+}
+
+.crt-dismiss {
+  position: fixed;
+  bottom: 14px;
+  right: 14px;
+  z-index: 9999;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--accent);
+  font-family: var(--font);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  padding: 4px 10px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+
+.crt-dismiss:hover {
+  opacity: 1;
+  box-shadow: 0 0 12px -2px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* ── Storage-error banner ────────────────────────────── */
+/* Emitted by theme.js on the first storageerror event per page
+   load; dismissible by the × button. Slots in at the top so it
+   doesn't collide with the CRT dismiss badge at the bottom.     */
+
+#storage-error-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9997;
+  padding: 0.45rem 2.5rem 0.45rem 0.9rem;
+  background: #4a1818;
+  color: #ffd4d4;
+  border-bottom: 1px solid #7d2828;
+  font-family: var(--font);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+body.light #storage-error-banner {
+  background: #fdecec;
+  color: #6b1f1f;
+  border-bottom-color: #e5b4b4;
+}
+
+#storage-error-banner button {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-family: var(--font);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  line-height: 1;
 }

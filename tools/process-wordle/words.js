@@ -56,6 +56,7 @@ const WORDS = [
   { word: "vmx",       hint: "The ESXi process that runs each virtual machine's execution context" },
   { word: "fdm",       hint: "The VMware HA Fault Domain Manager agent on each ESXi host" },
   { word: "eam",       hint: "The vCenter ESX Agent Manager that deploys partner solutions to hosts" },
+  { word: "zed",       hint: "ZFS event daemon that runs user scripts when pool or device events fire" },
 
   // 4 letters
   { word: "bash",      hint: "The default interactive shell on most Linux systems" },
@@ -141,6 +142,8 @@ const WORDS = [
   { word: "vpxd",      hint: "The core vCenter Server daemon that manages the entire VMware environment" },
   { word: "vmon",      hint: "The VMware service lifecycle manager that starts and monitors vCenter services" },
   { word: "vlcm",      hint: "The vSphere Lifecycle Manager that handles ESXi patching and image updates" },
+  { word: "qmgr",      hint: "Postfix queue manager that decides when and where each message gets delivered" },
+  { word: "xorg",      hint: "The reference implementation of the X Window System display server" },
 
   // 5 letters
   { word: "nginx",     hint: "Serves web traffic and proxies requests at high speed" },
@@ -294,6 +297,8 @@ const WORDS = [
   { word: "esxcli",    hint: "The command-line framework for configuring and querying an ESXi host" },
   { word: "vmafdd",    hint: "The VMware Authentication Framework daemon that manages SSO on vCenter" },
   { word: "vmdird",    hint: "The VMware Directory Service daemon that stores identity data on vCenter" },
+  { word: "pickup",    hint: "Scans the Postfix maildrop directory and submits newly-queued messages" },
+  { word: "system",    hint: "Windows kernel-mode process hosting threads that only run in kernel space" },
 
   // 7 letters
   { word: "systemd",   hint: "The init system responsible for booting and managing services on modern Linux" },
@@ -420,6 +425,12 @@ const WORDS = [
   { word: "mpcmdrun",  hint: "The Windows Defender command-line tool for managing scans, updates, and exclusions" },
   { word: "iexplore",  hint: "The Internet Explorer browser process, once the dominant way to browse the web" },
   { word: "vmkernel",  hint: "The ESXi hypervisor microkernel that directly manages hardware and virtual machines" },
+  { word: "ksmtuned",  hint: "Tunes Kernel Samepage Merging scan rate based on memory pressure" },
+  { word: "dmeventd",  hint: "Monitors device-mapper events and triggers LVM actions like thin-pool extension" },
+  { word: "rsyslogd",  hint: "The enhanced system logger that replaces traditional syslogd on most modern distros" },
+  { word: "xwayland",  hint: "Compatibility layer that lets legacy X11 apps run inside a Wayland session" },
+  { word: "services",  hint: "The Windows Service Control Manager that starts, stops, and supervises services" },
+  { word: "wmiprvse",  hint: "The WMI Provider Host that answers management queries against Windows" },
 
   // 9 letters
   { word: "memcached",  hint: "Stores frequently accessed data in memory to reduce database load" },
@@ -446,6 +457,8 @@ const WORDS = [
   { word: "pvedaemon",  hint: "The core Proxmox VE daemon that handles cluster-wide API and task operations" },
   { word: "vpostgres",  hint: "The embedded PostgreSQL instance storing all vCenter inventory and configuration" },
   { word: "vsanmgmtd",  hint: "The vSAN management daemon that handles storage policy and cluster operations" },
+  { word: "rrdcached",  hint: "Batches Round Robin Database writes to reduce disk IO for time-series graphs" },
+  { word: "taskhostw",  hint: "Windows host process for scheduled tasks and code loaded from DLLs" },
 
   // 10 letters
   { word: "keepalived",  hint: "Provides high availability and load balancing via VRRP" },

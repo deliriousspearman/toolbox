@@ -1,0 +1,2234 @@
+{
+  "windows": {
+    "versions": [
+      "Windows 7",
+      "Windows 8",
+      "Windows 10",
+      "Windows 11",
+      "Windows Server 2012",
+      "Windows Server 2016",
+      "Windows Server 2019",
+      "Windows Server 2022",
+      "Windows Server 2025"
+    ],
+    "categories": [
+      {
+        "id": "win-memory",
+        "name": "Memory & Running State",
+        "items": [
+          {
+            "id": "win-mem-dump",
+            "name": "Physical Memory Dump",
+            "path": "(acquired in-place)",
+            "description": "Full RAM capture — running processes, decrypted data, injected code, connection table, loaded drivers. Collect first; everything else is on disk.",
+            "command": "DumpIt.exe /OUTPUT memory.raw",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-running-procs",
+            "name": "Running Processes",
+            "path": "(live enumeration)",
+            "description": "Snapshot of active processes with PIDs, parents, command lines, and loaded modules.",
+            "command": "tasklist /v /FO CSV > processes.csv",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-net-conns",
+            "name": "Network Connections",
+            "path": "(live enumeration)",
+            "description": "Active TCP/UDP connections, listening sockets, and the owning process — critical for catching live C2.",
+            "command": "netstat -anob > netstat.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-logged-users",
+            "name": "Logged-in Users",
+            "path": "(live enumeration)",
+            "description": "Interactive and RDP sessions currently active on the host.",
+            "command": "query user",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-arp-route",
+            "name": "ARP Cache & Routing Table",
+            "path": "(live enumeration)",
+            "description": "Layer-2 neighbours and kernel routing table — reveals VPN tunnels and stale entries.",
+            "command": "arp -a > arp.txt && route print > route.txt",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "win-registry",
+        "name": "Registry Hives",
+        "items": [
+          {
+            "id": "win-reg-system",
+            "name": "SYSTEM hive",
+            "path": "C:\\Windows\\System32\\config\\SYSTEM",
+            "description": "Service configuration, device drivers, mounted devices, timezone, USB history, ShimCache.",
+            "command": "reg save HKLM\\SYSTEM system.hive",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-reg-software",
+            "name": "SOFTWARE hive",
+            "path": "C:\\Windows\\System32\\config\\SOFTWARE",
+            "description": "Installed applications, uninstall keys, Run/RunOnce persistence, default user settings.",
+            "command": "reg save HKLM\\SOFTWARE software.hive",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-reg-security",
+            "name": "SECURITY hive",
+            "path": "C:\\Windows\\System32\\config\\SECURITY",
+            "description": "Local security policy, cached domain credentials (LSA secrets).",
+            "command": "reg save HKLM\\SECURITY security.hive",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-reg-sam",
+            "name": "SAM hive",
+            "path": "C:\\Windows\\System32\\config\\SAM",
+            "description": "Local user accounts and password hashes. Pair with SYSTEM to decrypt.",
+            "command": "reg save HKLM\\SAM sam.hive",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-reg-ntuser",
+            "name": "NTUSER.DAT (each user)",
+            "path": "C:\\Users\\<user>\\NTUSER.DAT",
+            "description": "Per-user registry: UserAssist, TypedURLs, RecentDocs, Run keys, shell bags.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-reg-usrclass",
+            "name": "UsrClass.dat (each user)",
+            "path": "C:\\Users\\<user>\\AppData\\Local\\Microsoft\\Windows\\UsrClass.dat",
+            "description": "Per-user shell bags, recent Explorer activity, opened folder history.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-reg-amcache",
+            "name": "Amcache.hve",
+            "path": "C:\\Windows\\AppCompat\\Programs\\Amcache.hve",
+            "description": "Executed program inventory with SHA-1 hashes, first-run times, and binary metadata. Amcache replaced RecentFileCache on Win 8+.",
+            "command": "",
+            "versions": [
+              "Windows 8", "Windows 10", "Windows 11",
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "win-eventlogs",
+        "name": "Event Logs",
+        "items": [
+          {
+            "id": "win-evt-security",
+            "name": "Security.evtx",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Security.evtx",
+            "description": "Logons (4624/4625), privilege use, account changes, Kerberos auth.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-evt-system",
+            "name": "System.evtx",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\System.evtx",
+            "description": "Service starts/stops, driver loads, system boot/shutdown.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-evt-app",
+            "name": "Application.evtx",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Application.evtx",
+            "description": "Application crashes, errors, and informational events from installed software.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-evt-powershell",
+            "name": "PowerShell Operational",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-PowerShell%4Operational.evtx",
+            "description": "Script-block logging (4104), module loads, pipeline execution — if enabled.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-evt-tasksched",
+            "name": "Task Scheduler Operational",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-TaskScheduler%4Operational.evtx",
+            "description": "Scheduled-task registration, triggers, and runs (persistence).",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-evt-sysmon",
+            "name": "Sysmon Operational (if deployed)",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-Sysmon%4Operational.evtx",
+            "description": "Process creation with hashes, network connects, file creates, registry changes — only present if Sysmon is installed.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-evt-defender",
+            "name": "Defender Operational",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-Windows Defender%4Operational.evtx",
+            "description": "AV scan results, detections, real-time protection events. Defender is built-in from Win 8 / Server 2012 onward; Win 7 had a reduced anti-spyware variant without this log.",
+            "command": "",
+            "versions": [
+              "Windows 8", "Windows 10", "Windows 11",
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-evt-rdp-lsm",
+            "name": "RDP Local Session Manager",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-TerminalServices-LocalSessionManager%4Operational.evtx",
+            "description": "Inbound RDP session start / disconnect / reconnect events with usernames and source IPs.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-evt-rdp-rcm",
+            "name": "RDP Remote Connection Manager",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-TerminalServices-RemoteConnectionManager%4Operational.evtx",
+            "description": "Earlier-stage RDP events — connection requests and authentication steps. Complements LocalSessionManager.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-evt-ad-ds",
+            "name": "AD Directory Service log",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Directory Service.evtx",
+            "description": "Classic AD DS event log — schema changes, DB errors, replication issues, KDC events. Only on Domain Controllers.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-evt-dns-server",
+            "name": "DNS Server log",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\DNS Server.evtx",
+            "description": "DNS server events. Enable the separate DNS analytic/debug log at the DNS console for per-query logging.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-evt-dfsr",
+            "name": "DFS Replication log",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\DFS Replication.evtx",
+            "description": "SYSVOL replication events (DFSR replaced FRS). Failures here mean GPO/scripts may be stale on some DCs.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-evt-netlogon",
+            "name": "Netlogon Operational log",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-Security-Netlogon%4Operational.evtx",
+            "description": "Netlogon service events — secure-channel negotiation, trust queries. Surges of 5723/5719 suggest broken trusts or lateral movement.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-evt-ad-op",
+            "name": "AD DS Operational log",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-ActiveDirectory_DomainService%4Operational.evtx",
+            "description": "Modern AD DS operational log — detailed replication, schema, and service events. Present on Server 2012 onwards.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-evt-kerberos",
+            "name": "Kerberos Operational log",
+            "path": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-Kerberos%4Operational.evtx",
+            "description": "Kerberos client/server events. Often empty unless Kerberos logging is explicitly enabled, but worth grabbing in case it was.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "win-execution",
+        "name": "Execution Artifacts",
+        "items": [
+          {
+            "id": "win-prefetch",
+            "name": "Prefetch (*.pf)",
+            "path": "C:\\Windows\\Prefetch\\",
+            "description": "Records the last 8 executions per binary — name, run count, last-run timestamps, referenced files. Disabled by default on Windows Server.",
+            "command": "",
+            "versions": ["Windows 7", "Windows 8", "Windows 10", "Windows 11"]
+          },
+          {
+            "id": "win-shimcache",
+            "name": "ShimCache (AppCompatCache)",
+            "path": "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\AppCompatCache",
+            "description": "File path, size, and last-modified time of executed binaries. Lives inside the SYSTEM hive — collect that instead.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-bam",
+            "name": "BAM / DAM",
+            "path": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\bam\\State\\UserSettings\\<SID>",
+            "description": "Background Activity Moderator — per-user last-run times for executed binaries. In the SYSTEM hive.",
+            "command": "",
+            "versions": [
+              "Windows 10", "Windows 11",
+              "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-srum",
+            "name": "SRUM database",
+            "path": "C:\\Windows\\System32\\sru\\SRUDB.dat",
+            "description": "System Resource Usage Monitor — per-app network bytes, CPU/energy usage, historical.",
+            "command": "",
+            "versions": [
+              "Windows 8", "Windows 10", "Windows 11",
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "win-user-activity",
+        "name": "User Activity",
+        "items": [
+          {
+            "id": "win-lnk",
+            "name": "LNK files (Recent)",
+            "path": "C:\\Users\\<user>\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\",
+            "description": "Shortcut files auto-created when a user opens a file — target path, target size, MAC times, volume serial.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-jumplists",
+            "name": "Jump Lists",
+            "path": "C:\\Users\\<user>\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\AutomaticDestinations\\",
+            "description": "Per-application recent-file lists (Office, Explorer, etc.) — richer than LNKs for app-specific activity.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-browser-chrome",
+            "name": "Chrome profile",
+            "path": "C:\\Users\\<user>\\AppData\\Local\\Google\\Chrome\\User Data\\",
+            "description": "History, Cookies, Login Data (SQLite), Bookmarks, Top Sites, Shortcuts, Cache.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-browser-edge",
+            "name": "Edge (Chromium) profile",
+            "path": "C:\\Users\\<user>\\AppData\\Local\\Microsoft\\Edge\\User Data\\",
+            "description": "Same structure as Chrome — History, Cookies, Login Data, Cache.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-browser-firefox",
+            "name": "Firefox profile",
+            "path": "C:\\Users\\<user>\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\<id>.default\\",
+            "description": "places.sqlite (history + bookmarks), cookies.sqlite, formhistory, logins.json.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-ps-history",
+            "name": "PowerShell history (ConsoleHost_history.txt)",
+            "path": "C:\\Users\\<user>\\AppData\\Roaming\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt",
+            "description": "Plain-text log of every interactive PowerShell command per user — survives reboots. PSReadLine is built-in from Win 10 / Server 2016 onward.",
+            "command": "",
+            "versions": [
+              "Windows 10", "Windows 11",
+              "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-screenshots",
+            "name": "Screenshots folder",
+            "path": "C:\\Users\\<user>\\Pictures\\Screenshots\\",
+            "description": "Win+PrtScn auto-saves numbered PNGs here (feature added in Win 8). Also check OneDrive's screenshot redirect if the user enabled it.",
+            "command": "",
+            "versions": [
+              "Windows 8", "Windows 10", "Windows 11",
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-timeline",
+            "name": "Windows Timeline (ActivitiesCache.db)",
+            "path": "C:\\Users\\<user>\\AppData\\Local\\ConnectedDevicesPlatform\\L.<user>\\ActivitiesCache.db",
+            "description": "SQLite DB of recent app activity and opened files (Win 10 1803+). Client OS only — removed from Server defaults.",
+            "command": "",
+            "versions": ["Windows 10", "Windows 11"]
+          },
+          {
+            "id": "win-thumbcache",
+            "name": "Thumbnail cache",
+            "path": "C:\\Users\\<user>\\AppData\\Local\\Microsoft\\Windows\\Explorer\\thumbcache_*.db",
+            "description": "Per-user cached thumbnails of previously-viewed images and documents — recoverable even after the originals are deleted.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-rdp-bmc",
+            "name": "RDP bitmap cache",
+            "path": "C:\\Users\\<user>\\AppData\\Local\\Microsoft\\Terminal Server Client\\Cache\\*.bmc",
+            "description": "Client-side tile cache of outbound RDP sessions — can be reassembled to show fragments of what the user viewed remotely.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-office-recent",
+            "name": "Office Recent files",
+            "path": "C:\\Users\\<user>\\AppData\\Roaming\\Microsoft\\Office\\Recent\\",
+            "description": "Shortcuts to documents opened in Office — complements the generic Recent LNK list with app-attributable data.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-onedrive",
+            "name": "OneDrive / cloud sync folders",
+            "path": "C:\\Users\\<user>\\OneDrive\\ (and vendor variants for Dropbox, Google Drive, iCloud, Teams)",
+            "description": "Cloud-synced files often hold data deleted from the local disk. Also grab the client's sync logs (e.g. %LocalAppData%\\Microsoft\\OneDrive\\logs\\).",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "win-filesystem",
+        "name": "Filesystem",
+        "items": [
+          {
+            "id": "win-mft",
+            "name": "$MFT (Master File Table)",
+            "path": "(root of each NTFS volume)",
+            "description": "Every file and directory entry on the volume with timestamps, sizes, and resident data. Use a raw-disk tool to extract.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-usnjrnl",
+            "name": "$UsnJrnl:$J",
+            "path": "\\$Extend\\$UsnJrnl:$J",
+            "description": "Filesystem change journal — file creates/renames/deletes with timestamps. Usually goes back days to weeks.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-pagefile",
+            "name": "pagefile.sys",
+            "path": "C:\\pagefile.sys",
+            "description": "Swap. Can contain fragments of process memory including command lines and strings.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-hiberfil",
+            "name": "hiberfil.sys",
+            "path": "C:\\hiberfil.sys",
+            "description": "Hibernation file — compressed snapshot of RAM at last sleep. Gold for offline analysis.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-swapfile",
+            "name": "swapfile.sys",
+            "path": "C:\\swapfile.sys",
+            "description": "Modern-app paging file (Win 8+). Smaller than pagefile but still yields memory fragments.",
+            "command": "",
+            "versions": [
+              "Windows 8", "Windows 10", "Windows 11",
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-recyclebin",
+            "name": "Recycle Bin ($Recycle.Bin)",
+            "path": "C:\\$Recycle.Bin\\<SID>\\",
+            "description": "$I* files hold original path, delete time, and size; $R* files hold the actual deleted content. One subfolder per user SID.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-vss",
+            "name": "Volume Shadow Copies",
+            "path": "(per-volume snapshots)",
+            "description": "Historical snapshots of the entire volume — often weeks of restorable state. List with vssadmin, then mount each snapshot with mklink to browse offline.",
+            "command": "vssadmin list shadows",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-search-index",
+            "name": "Windows Search index",
+            "path": "C:\\ProgramData\\Microsoft\\Search\\Data\\Applications\\Windows\\Windows.edb",
+            "description": "ESE database with a full-text index of indexed locations (docs, email) — can yield content of files that have been deleted.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "win-persistence",
+        "name": "Persistence",
+        "items": [
+          {
+            "id": "win-run-keys",
+            "name": "Run / RunOnce registry keys",
+            "path": "HKLM & HKCU \\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+            "description": "Most-common persistence mechanism — included when you save SOFTWARE + NTUSER.DAT.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-startup",
+            "name": "Startup folders",
+            "path": "C:\\Users\\<user>\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\",
+            "description": "Drops here auto-run at logon. Also check the All Users equivalent under ProgramData.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-tasks-folder",
+            "name": "Scheduled Tasks folder",
+            "path": "C:\\Windows\\System32\\Tasks\\",
+            "description": "XML definitions of every scheduled task — full command line, principal, triggers.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-services",
+            "name": "Services registry",
+            "path": "HKLM\\SYSTEM\\CurrentControlSet\\Services",
+            "description": "Full service definitions including ImagePath (captured when you save SYSTEM).",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "win-wmi-persistence",
+            "name": "WMI Repository",
+            "path": "C:\\Windows\\System32\\wbem\\Repository\\",
+            "description": "WMI event subscriptions are a stealth persistence vector — this repository holds them.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "win-device-history",
+        "name": "Device History",
+        "items": [
+          {
+            "id": "win-setupapi-log",
+            "name": "setupapi.dev.log",
+            "path": "C:\\Windows\\INF\\setupapi.dev.log",
+            "description": "Plug-and-Play device install log — first-connect timestamps for every USB stick and hardware device, regardless of current presence. Pair with USBSTOR / USB registry keys (already captured via the SYSTEM hive) for full device provenance.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "win-ad",
+        "name": "Active Directory",
+        "items": [
+          {
+            "id": "win-ad-ntds",
+            "name": "ntds.dit (AD database)",
+            "path": "C:\\Windows\\NTDS\\ntds.dit",
+            "description": "The AD database — every user, group, computer, and password hash in the domain. ESE format; locked on a running DC, use ntdsutil ifm or a VSS snapshot to grab it safely.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-ad-edb-log",
+            "name": "AD transaction + reserve logs",
+            "path": "C:\\Windows\\NTDS\\edb.log, edb*.log, edbres00001.jrs, edbres00002.jrs, temp.edb",
+            "description": "ESE transaction and reserve log files. Needed alongside ntds.dit to replay uncommitted changes when opening the DB offline.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-ad-sysvol",
+            "name": "SYSVOL (GPO + scripts)",
+            "path": "C:\\Windows\\SYSVOL\\sysvol\\<domain>\\",
+            "description": "Replicated share holding Group Policy Objects, logon scripts, and anything pushed via GPO. Common persistence drop-spot for domain-wide payloads.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-ad-policies",
+            "name": "GPO definitions",
+            "path": "C:\\Windows\\SYSVOL\\sysvol\\<domain>\\Policies\\",
+            "description": "One folder per GPO (GUID-named). Contains Registry.pol, startup/shutdown scripts, scheduled-task XMLs, and Group Policy Preferences — a rich persistence surface.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-ad-dns-zones",
+            "name": "DNS zone files (if file-backed)",
+            "path": "C:\\Windows\\System32\\dns\\",
+            "description": "DNS zone data for non-AD-integrated zones. AD-integrated zones live inside ntds.dit instead.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-ad-certsrv",
+            "name": "Certificate Services database",
+            "path": "C:\\Windows\\System32\\CertLog\\",
+            "description": "AD CS database — issued certificates, pending requests, and CA logs. Only present on servers with the Certificate Services role installed.",
+            "command": "",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          },
+          {
+            "id": "win-ad-dcdiag",
+            "name": "DC health + replication (live)",
+            "path": "(live command)",
+            "description": "Replication state and DC health. Run from the DC under investigation or a peer — unexpected replication partners or failures are worth chasing.",
+            "command": "repadmin /showrepl > repl.txt && dcdiag /v > dcdiag.txt",
+            "versions": [
+              "Windows Server 2012", "Windows Server 2016", "Windows Server 2019",
+              "Windows Server 2022", "Windows Server 2025"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "linux": {
+    "versions": [
+      "Ubuntu 18.04", "Ubuntu 20.04", "Ubuntu 22.04", "Ubuntu 24.04",
+      "Debian 10", "Debian 11", "Debian 12",
+      "CentOS 7", "CentOS 8",
+      "RHEL 7", "RHEL 8", "RHEL 9",
+      "Fedora 38", "Fedora 39", "Fedora 40"
+    ],
+    "categories": [
+      {
+        "id": "lin-memory",
+        "name": "Memory & Running State",
+        "items": [
+          {
+            "id": "lin-mem-dump",
+            "name": "Physical Memory Dump",
+            "path": "(acquired in-place)",
+            "description": "Full RAM capture — running processes, decrypted data, injected code. Use AVML or LiME.",
+            "command": "avml memory.lime",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-ps",
+            "name": "Process List (ps auxef)",
+            "path": "(live enumeration)",
+            "description": "Process tree with full command lines, users, TTYs — the single most useful live artifact.",
+            "command": "ps auxef > ps.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-netstat",
+            "name": "Network Connections (ss)",
+            "path": "(live enumeration)",
+            "description": "Active sockets with owning PID and process name. Preferred over deprecated netstat.",
+            "command": "ss -tunap > sockets.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-lsof",
+            "name": "Open Files (lsof)",
+            "path": "(live enumeration)",
+            "description": "Every open FD: files, sockets, pipes, deleted-but-held files (common malware trick).",
+            "command": "lsof > lsof.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-modules",
+            "name": "Loaded Kernel Modules",
+            "path": "/proc/modules",
+            "description": "Kernel modules currently loaded. Compare against expected set; rootkits hide here.",
+            "command": "lsmod > modules.txt && cp /proc/modules modules.proc",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-proc-net",
+            "name": "Passive connection state (/proc/net)",
+            "path": "/proc/net/tcp, /proc/net/tcp6, /proc/net/udp, /proc/net/nf_conntrack",
+            "description": "Raw socket and conntrack tables straight from the kernel — fallback if ss/netstat aren't trusted, and richer than either for established and tracked connections.",
+            "command": "cp /proc/net/tcp /proc/net/tcp6 /proc/net/udp /proc/net/nf_conntrack .",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "lin-sysinfo",
+        "name": "System Information",
+        "items": [
+          {
+            "id": "lin-osrelease",
+            "name": "/etc/os-release",
+            "path": "/etc/os-release",
+            "description": "Distro name, version ID, pretty name. First thing to collect to establish baseline.",
+            "command": "cat /etc/os-release",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-issue",
+            "name": "/etc/issue and /etc/issue.net",
+            "path": "/etc/issue",
+            "description": "Login banners — sometimes customised with hostname, warning text, distro branding.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-hostname",
+            "name": "/etc/hostname",
+            "path": "/etc/hostname",
+            "description": "System hostname.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-timezone",
+            "name": "Timezone (/etc/localtime, /etc/timezone)",
+            "path": "/etc/localtime",
+            "description": "Symlink to the zoneinfo file — essential for interpreting every timestamp you collect.",
+            "command": "readlink /etc/localtime && cat /etc/timezone 2>/dev/null",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-fstab",
+            "name": "/etc/fstab",
+            "path": "/etc/fstab",
+            "description": "Mount-at-boot definitions — reveals external volumes, network shares, tmpfs layout.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-uname",
+            "name": "Kernel version (uname -a)",
+            "path": "(live command)",
+            "description": "Kernel, release, arch, build date. Pin the exact kernel for module compatibility.",
+            "command": "uname -a > uname.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-dmesg",
+            "name": "Kernel Ring Buffer (dmesg)",
+            "path": "(live command)",
+            "description": "Boot-time and runtime kernel messages — hardware events, OOM kills, module loads.",
+            "command": "dmesg > dmesg.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-proc-mounts",
+            "name": "Live mount state (/proc/mounts)",
+            "path": "/proc/mounts",
+            "description": "Actual mounted filesystems right now — distinct from /etc/fstab which is only boot-time config. Reveals tmpfs, bind mounts, overlay/container mounts, and secret volumes.",
+            "command": "cat /proc/mounts > mounts.txt",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "lin-users",
+        "name": "Users & Authentication",
+        "items": [
+          {
+            "id": "lin-passwd",
+            "name": "/etc/passwd",
+            "path": "/etc/passwd",
+            "description": "User accounts, UIDs, home dirs, shells. Look for UID 0 duplicates and unexpected accounts.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-shadow",
+            "name": "/etc/shadow",
+            "path": "/etc/shadow",
+            "description": "Password hashes, last-change, expiry. Root-readable only.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-group",
+            "name": "/etc/group",
+            "path": "/etc/group",
+            "description": "Group membership — check who has sudo/wheel/docker/adm access.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-sudoers",
+            "name": "/etc/sudoers and /etc/sudoers.d/",
+            "path": "/etc/sudoers",
+            "description": "Sudo-permission rules. Drop-in files in sudoers.d are easy to miss.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-bash-history",
+            "name": "Shell history (~/.bash_history)",
+            "path": "/root/.bash_history, /home/*/.bash_history",
+            "description": "Per-user command history. Also check .zsh_history, .ash_history, .python_history.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-ssh-keys",
+            "name": "SSH keys and known_hosts (~/.ssh/)",
+            "path": "/root/.ssh/, /home/*/.ssh/",
+            "description": "authorized_keys (persistence!), known_hosts, private id_rsa/id_ed25519 — capture all.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-wtmp",
+            "name": "Login records (wtmp/btmp/lastlog)",
+            "path": "/var/log/wtmp, /var/log/btmp, /var/log/lastlog",
+            "description": "Binary logs of successful logins (wtmp), failed logins (btmp), last-login per user. Read with last, lastb, lastlog.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-other-histories",
+            "name": "Other shell / app histories",
+            "path": "~/.zsh_history, ~/.python_history, ~/.mysql_history, ~/.psql_history, ~/.rediscli_history, ~/.viminfo, ~/.lesshst, ~/.wget-hsts",
+            "description": "Per-user histories for non-bash shells and common tools. Each file is plain text and survives across sessions — as valuable as bash_history and much more often overlooked.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-sshd-config",
+            "name": "sshd configuration",
+            "path": "/etc/ssh/sshd_config and /etc/ssh/sshd_config.d/",
+            "description": "SSH daemon config — check PermitRootLogin, AuthorizedKeysFile overrides, Match blocks, and any drop-ins that weaken auth.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-pam",
+            "name": "PAM configuration",
+            "path": "/etc/pam.d/ and /etc/security/",
+            "description": "Pluggable-auth modules — a malicious PAM module or a modified /etc/pam.d/sshd can silently bypass authentication. High-value persistence check.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "lin-logs",
+        "name": "Logs",
+        "items": [
+          {
+            "id": "lin-auth-debian",
+            "name": "/var/log/auth.log",
+            "path": "/var/log/auth.log",
+            "description": "SSH, sudo, PAM auth events on Debian-family distros.",
+            "command": "",
+            "versions": [
+              "Ubuntu 18.04", "Ubuntu 20.04", "Ubuntu 22.04", "Ubuntu 24.04",
+              "Debian 10", "Debian 11", "Debian 12"
+            ]
+          },
+          {
+            "id": "lin-auth-rhel",
+            "name": "/var/log/secure",
+            "path": "/var/log/secure",
+            "description": "SSH, sudo, PAM auth events on RHEL-family distros.",
+            "command": "",
+            "versions": [
+              "CentOS 7", "CentOS 8",
+              "RHEL 7", "RHEL 8", "RHEL 9",
+              "Fedora 38", "Fedora 39", "Fedora 40"
+            ]
+          },
+          {
+            "id": "lin-syslog-debian",
+            "name": "/var/log/syslog",
+            "path": "/var/log/syslog",
+            "description": "General system messages on Debian-family.",
+            "command": "",
+            "versions": [
+              "Ubuntu 18.04", "Ubuntu 20.04", "Ubuntu 22.04", "Ubuntu 24.04",
+              "Debian 10", "Debian 11", "Debian 12"
+            ]
+          },
+          {
+            "id": "lin-syslog-rhel",
+            "name": "/var/log/messages",
+            "path": "/var/log/messages",
+            "description": "General system messages on RHEL-family.",
+            "command": "",
+            "versions": [
+              "CentOS 7", "CentOS 8",
+              "RHEL 7", "RHEL 8", "RHEL 9",
+              "Fedora 38", "Fedora 39", "Fedora 40"
+            ]
+          },
+          {
+            "id": "lin-journal",
+            "name": "systemd journal",
+            "path": "/var/log/journal/ (persistent) or /run/log/journal/ (volatile)",
+            "description": "Binary structured logs — richer than text logs. Export with journalctl for offline read.",
+            "command": "journalctl --all --no-pager > journal.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-audit",
+            "name": "audit.log (auditd)",
+            "path": "/var/log/audit/audit.log",
+            "description": "Kernel audit events — syscall tracing, file access, exec. Only present if auditd is installed and running.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-web-logs",
+            "name": "Web server logs",
+            "path": "/var/log/apache2/ (Debian-family), /var/log/httpd/ (RHEL-family), /var/log/nginx/",
+            "description": "Access and error logs — frequently record the initial entry point (brute force, webshell upload, SQLi). Don't forget the rotated archives in each directory.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-fail2ban",
+            "name": "fail2ban log",
+            "path": "/var/log/fail2ban.log",
+            "description": "Banned IPs with trigger reasons and timestamps. Only present if fail2ban is installed.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "lin-persistence",
+        "name": "Persistence",
+        "items": [
+          {
+            "id": "lin-cron",
+            "name": "Cron jobs",
+            "path": "/etc/crontab, /etc/cron.d/, /etc/cron.{hourly,daily,weekly,monthly}/, /var/spool/cron/",
+            "description": "System and per-user cron — /var/spool/cron/ is frequently abused and easy to miss.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-systemd",
+            "name": "systemd unit files",
+            "path": "/etc/systemd/system/, /lib/systemd/system/, /usr/lib/systemd/system/, ~/.config/systemd/user/",
+            "description": "Service definitions — including user units. Recently-modified .service files are suspicious.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-rclocal",
+            "name": "/etc/rc.local",
+            "path": "/etc/rc.local",
+            "description": "Legacy boot script. Not present by default on systemd distros but attackers sometimes recreate it.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-shell-rc",
+            "name": "Shell rc files",
+            "path": "~/.bashrc, ~/.profile, ~/.bash_profile, /etc/profile, /etc/profile.d/, /etc/bash.bashrc",
+            "description": "Runs on every login/shell start — a classic persistence hiding spot.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-ldso",
+            "name": "/etc/ld.so.preload",
+            "path": "/etc/ld.so.preload",
+            "description": "Libraries injected into every dynamically-linked binary. Should not exist on a clean system — presence is a rootkit red flag.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-at",
+            "name": "at jobs",
+            "path": "/var/spool/at/, /etc/at.allow, /etc/at.deny",
+            "description": "One-shot scheduled jobs — a frequently-overlooked alternative to cron.",
+            "command": "atq",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-modprobe",
+            "name": "Kernel module auto-load config",
+            "path": "/etc/modules-load.d/, /etc/modprobe.d/, /etc/modules",
+            "description": "Lists modules loaded at boot and their options. Rootkits can hide here as an extra entry with an innocuous name — diff against the distro defaults.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-initramfs",
+            "name": "Kernel / initramfs images",
+            "path": "/boot/vmlinuz-*, /boot/initrd.img-* (Debian-family) or /boot/initramfs-* (RHEL-family)",
+            "description": "Booted kernel and its early-userspace image. Sophisticated rootkits modify initramfs to re-infect even after a system re-install.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "lin-network",
+        "name": "Network Configuration",
+        "items": [
+          {
+            "id": "lin-resolv",
+            "name": "/etc/resolv.conf",
+            "path": "/etc/resolv.conf",
+            "description": "DNS resolver config. Often symlinked to systemd-resolved's runtime file.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-hosts",
+            "name": "/etc/hosts",
+            "path": "/etc/hosts",
+            "description": "Static hostname→IP mappings. Poisoning here is a quick redirection trick.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-iptables",
+            "name": "Firewall rules (iptables / nft)",
+            "path": "(live command)",
+            "description": "Active packet-filter rules. Capture both families in case the system uses one or the other.",
+            "command": "iptables-save > iptables.txt && nft list ruleset > nft.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-iproute",
+            "name": "Routing and ARP (ip)",
+            "path": "(live command)",
+            "description": "Routing table, ARP neighbours, interface list. Modern replacement for route/arp/ifconfig.",
+            "command": "ip -br a > iface.txt && ip route > route.txt && ip neigh > arp.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-netplan",
+            "name": "netplan configuration",
+            "path": "/etc/netplan/*.yaml",
+            "description": "YAML network config used by Ubuntu since 18.04. Describes interfaces, bridges, VLANs, and the backend renderer (networkd vs NetworkManager).",
+            "command": "",
+            "versions": [
+              "Ubuntu 18.04", "Ubuntu 20.04", "Ubuntu 22.04", "Ubuntu 24.04"
+            ]
+          },
+          {
+            "id": "lin-nm-connections",
+            "name": "NetworkManager connections",
+            "path": "/etc/NetworkManager/system-connections/",
+            "description": "Per-connection keyfiles (Wi-Fi, VPN, wired) with SSIDs, auth settings, and sometimes pre-shared keys. Default networking stack on RHEL 8+ / Fedora.",
+            "command": "",
+            "versions": [
+              "CentOS 8",
+              "RHEL 8", "RHEL 9",
+              "Fedora 38", "Fedora 39", "Fedora 40"
+            ]
+          },
+          {
+            "id": "lin-ifcfg",
+            "name": "Network scripts (ifcfg-*)",
+            "path": "/etc/sysconfig/network-scripts/ifcfg-*",
+            "description": "Legacy per-interface configuration on RHEL-family. Default on RHEL 7 / CentOS 7; still supported via a plugin on RHEL 8 / CentOS 8.",
+            "command": "",
+            "versions": [
+              "CentOS 7", "CentOS 8",
+              "RHEL 7", "RHEL 8"
+            ]
+          },
+          {
+            "id": "lin-interfaces",
+            "name": "/etc/network/interfaces",
+            "path": "/etc/network/interfaces and /etc/network/interfaces.d/",
+            "description": "Classic ifupdown config — default networking on Debian. May coexist with NetworkManager on desktop installs.",
+            "command": "",
+            "versions": [
+              "Debian 10", "Debian 11", "Debian 12"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "lin-software",
+        "name": "Installed Software",
+        "items": [
+          {
+            "id": "lin-dpkg",
+            "name": "dpkg package list",
+            "path": "(live command)",
+            "description": "All installed .deb packages with versions. Compare against a known-good baseline to spot planted packages.",
+            "command": "dpkg -l > dpkg.txt",
+            "versions": [
+              "Ubuntu 18.04", "Ubuntu 20.04", "Ubuntu 22.04", "Ubuntu 24.04",
+              "Debian 10", "Debian 11", "Debian 12"
+            ]
+          },
+          {
+            "id": "lin-apt-history",
+            "name": "APT install history",
+            "path": "/var/log/apt/history.log, /var/log/apt/term.log",
+            "description": "Timeline of every apt install/remove/upgrade with the invoking user.",
+            "command": "",
+            "versions": [
+              "Ubuntu 18.04", "Ubuntu 20.04", "Ubuntu 22.04", "Ubuntu 24.04",
+              "Debian 10", "Debian 11", "Debian 12"
+            ]
+          },
+          {
+            "id": "lin-rpm",
+            "name": "rpm package list",
+            "path": "(live command)",
+            "description": "All installed RPMs with versions, install time, vendor. rpm -Va checks for modified files against the package DB.",
+            "command": "rpm -qa --last > rpm.txt",
+            "versions": [
+              "CentOS 7", "CentOS 8",
+              "RHEL 7", "RHEL 8", "RHEL 9",
+              "Fedora 38", "Fedora 39", "Fedora 40"
+            ]
+          },
+          {
+            "id": "lin-yum-log",
+            "name": "yum transaction log",
+            "path": "/var/log/yum.log",
+            "description": "Legacy yum install/remove history.",
+            "command": "",
+            "versions": ["CentOS 7", "RHEL 7"]
+          },
+          {
+            "id": "lin-dnf-log",
+            "name": "dnf transaction log",
+            "path": "/var/log/dnf.log, /var/log/dnf.rpm.log",
+            "description": "Modern dnf install/remove history — replaces yum.log.",
+            "command": "",
+            "versions": [
+              "CentOS 8",
+              "RHEL 8", "RHEL 9",
+              "Fedora 38", "Fedora 39", "Fedora 40"
+            ]
+          },
+          {
+            "id": "lin-docker",
+            "name": "Docker containers & logs",
+            "path": "/var/lib/docker/containers/<id>/<id>-json.log and /var/lib/docker/overlay2/",
+            "description": "Per-container stdout/stderr log files and image layers. Pair with `docker ps -a` and `docker images` to map containers to IDs — payloads often live inside containers rather than on the host.",
+            "command": "docker ps -a > containers.txt && docker images > images.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-snap",
+            "name": "Snap packages",
+            "path": "(live command) and /var/snap/, /snap/",
+            "description": "Parallel package system — snap lists, revisions, and per-snap data. Standard on Ubuntu.",
+            "command": "snap list --all > snap.txt",
+            "versions": [
+              "Ubuntu 18.04", "Ubuntu 20.04", "Ubuntu 22.04", "Ubuntu 24.04"
+            ]
+          },
+          {
+            "id": "lin-flatpak",
+            "name": "Flatpak packages",
+            "path": "(live command) and /var/lib/flatpak/",
+            "description": "Sandboxed application packages — common on Fedora and optional on RHEL/CentOS 8+. Apps run with their own library stack, so their content isn't visible in rpm -qa.",
+            "command": "flatpak list > flatpak.txt",
+            "versions": [
+              "CentOS 8",
+              "RHEL 8", "RHEL 9",
+              "Fedora 38", "Fedora 39", "Fedora 40"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "lin-sweeps",
+        "name": "Filesystem Sweeps",
+        "items": [
+          {
+            "id": "lin-suid",
+            "name": "SUID / SGID binary snapshot",
+            "path": "(live scan)",
+            "description": "Finds every SUID/SGID-executable file on local filesystems. Compare against a known-good list to surface planted privilege-escalation binaries.",
+            "command": "find / -xdev \\( -perm -4000 -o -perm -2000 \\) -type f 2>/dev/null > suid.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-worldwrite",
+            "name": "World-writable directories",
+            "path": "(live scan)",
+            "description": "Directories anyone can write to — attacker staging grounds beyond the usual /tmp, /var/tmp, /dev/shm.",
+            "command": "find / -xdev -type d -perm -o+w 2>/dev/null > worldwrite.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "lin-recent-modified",
+            "name": "Recently modified files (last 7 days)",
+            "path": "(live scan)",
+            "description": "Everything touched in the past week — catches fresh drops and config changes. Adjust the -mtime window to fit the incident timeline.",
+            "command": "find / -xdev -mtime -7 -type f 2>/dev/null > recent.txt",
+            "versions": ["*"]
+          }
+        ]
+      }
+    ]
+  },
+  "proxmox": {
+    "versions": ["Proxmox VE 7", "Proxmox VE 8", "Proxmox VE 9"],
+    "categories": [
+      {
+        "id": "pve-config",
+        "name": "Cluster & Node Config",
+        "items": [
+          {
+            "id": "pve-corosync",
+            "name": "corosync.conf",
+            "path": "/etc/pve/corosync.conf",
+            "description": "Cluster membership, ring addresses, and quorum votes. Identical across every node via pmxcfs.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-datacenter",
+            "name": "datacenter.cfg",
+            "path": "/etc/pve/datacenter.cfg",
+            "description": "Cluster-wide defaults — migration settings, HA policies, keyboard, language, console type.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-storage-cfg",
+            "name": "storage.cfg",
+            "path": "/etc/pve/storage.cfg",
+            "description": "All storage pool definitions (Directory, NFS, CIFS, LVM, ZFS, Ceph, iSCSI, RBD). Tells you where VM images actually live.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-user-cfg",
+            "name": "user.cfg",
+            "path": "/etc/pve/user.cfg",
+            "description": "PVE users, groups, and ACL entries (role assignments).",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-domains",
+            "name": "domains.cfg",
+            "path": "/etc/pve/domains.cfg",
+            "description": "Authentication realms — PAM, PVE, LDAP, Active Directory, OpenID Connect.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-shadow-cfg",
+            "name": "PVE realm password hashes",
+            "path": "/etc/pve/priv/shadow.cfg",
+            "description": "Password hashes for users in the PVE realm (separate from PAM / Linux shadow). Root-readable only.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-authkey",
+            "name": "PVE JWT signing keys",
+            "path": "/etc/pve/priv/authkey.pub and /etc/pve/priv/authkey.key",
+            "description": "Keys used to sign session tickets. Possession means being able to forge valid PVE sessions.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-tfa",
+            "name": "2FA configuration",
+            "path": "/etc/pve/priv/tfa.cfg",
+            "description": "Per-user TOTP and webauthn secrets.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-token",
+            "name": "API token store",
+            "path": "/etc/pve/priv/token.cfg",
+            "description": "All API tokens with their associated users, expiry, and privsep flags. Tokens are a common persistence mechanism.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-vm-configs",
+            "name": "VM configs (qemu-server)",
+            "path": "/etc/pve/nodes/<node>/qemu-server/*.conf",
+            "description": "Per-VM config — CPU, memory, attached disks, network bridges, cloud-init snippets, boot order.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-ct-configs",
+            "name": "Container configs (LXC)",
+            "path": "/etc/pve/nodes/<node>/lxc/*.conf",
+            "description": "Per-LXC config — template, rootfs, mount points, unprivileged flag, features (nesting, keyctl).",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-firewall-cfg",
+            "name": "Proxmox firewall rules",
+            "path": "/etc/pve/firewall/cluster.fw, /etc/pve/nodes/<node>/host.fw, /etc/pve/firewall/<vmid>.fw",
+            "description": "PVE firewall rule files at cluster, node, and per-VM/CT scopes. Compiled into nftables by pve-firewall.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "pve-logs",
+        "name": "Logs",
+        "items": [
+          {
+            "id": "pve-pveproxy-log",
+            "name": "pveproxy access log",
+            "path": "/var/log/pveproxy/access.log",
+            "description": "Every web UI and API request with source IP, method, URL, and user. First stop for unauthorised access or brute-force.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-tasks",
+            "name": "Task archive",
+            "path": "/var/log/pve/tasks/active, /var/log/pve/tasks/index, /var/log/pve/tasks/<date>/UPID:*",
+            "description": "Every VM start/stop/backup/restore/migrate leaves a record here with the invoking user and full command output.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-pveam-log",
+            "name": "Template download log",
+            "path": "/var/log/pveam.log",
+            "description": "pveam (template manager) download and update history.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-fw-log",
+            "name": "pve-firewall log",
+            "path": "/var/log/pve-firewall.log",
+            "description": "pve-firewall daemon events — reload errors, ruleset compile output.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-daemon-log",
+            "name": "pvedaemon / pveproxy / pvestatd events",
+            "path": "/var/log/daemon.log",
+            "description": "Debian daemon.log — includes PVE internal service events and status updates alongside system daemons.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "pve-live",
+        "name": "Live State",
+        "items": [
+          {
+            "id": "pve-qm-list",
+            "name": "VM and container list",
+            "path": "(live command)",
+            "description": "Current VM + container inventory with status and resource usage.",
+            "command": "qm list > vms.txt && pct list > cts.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-pvecm",
+            "name": "Cluster status",
+            "path": "(live command)",
+            "description": "Cluster members, quorum state, expected votes.",
+            "command": "pvecm status > cluster.txt && pvecm nodes > nodes.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-api-snapshot",
+            "name": "Full API resource snapshot",
+            "path": "(live command)",
+            "description": "Snapshot of every cluster resource — VMs, CTs, storages, pools — via the authenticated API. Richer than qm/pct.",
+            "command": "pvesh get /cluster/resources > resources.json",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-ha",
+            "name": "HA state",
+            "path": "(live command)",
+            "description": "High-availability service + fence state. Only meaningful if HA is configured.",
+            "command": "ha-manager status > ha.txt",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "pve-storage",
+        "name": "Storage & Backup",
+        "items": [
+          {
+            "id": "pve-vzdump-conf",
+            "name": "Backup configuration",
+            "path": "/etc/vzdump.conf and /etc/pve/vzdump.cron",
+            "description": "Default vzdump settings and the cluster-wide backup schedule.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-backup-target",
+            "name": "Backup archives",
+            "path": "(from storage.cfg — typically /var/lib/vz/dump/ or a PBS target)",
+            "description": ".vma, .vma.gz, .tar.zst archives. Older backups often contain evidence since deleted from live VMs.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-zfs",
+            "name": "ZFS pool and dataset state",
+            "path": "(live command)",
+            "description": "Pool health, dataset list (including per-VM zvols), and full operation history — covers every ZFS action since pool creation.",
+            "command": "zpool status -v > zpool.txt && zpool history > zhistory.txt && zfs list -t all > zfs.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-lvm",
+            "name": "LVM state",
+            "path": "(live command)",
+            "description": "Volume groups, PVs, and LVs — including lvm-thin volumes backing VM disks.",
+            "command": "pvs > pvs.txt && vgs > vgs.txt && lvs -a > lvs.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-ceph-conf",
+            "name": "Ceph configuration (if used)",
+            "path": "/etc/pve/ceph.conf and /etc/pve/priv/ceph/*.keyring",
+            "description": "Ceph cluster config and keyrings as seen from PVE. Only present on clusters with integrated Ceph.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pve-ceph-state",
+            "name": "Ceph live state (if used)",
+            "path": "(live command)",
+            "description": "Cluster health, OSD map, pool usage. Run from any PVE node with Ceph.",
+            "command": "ceph -s > ceph.txt && ceph osd tree >> ceph.txt",
+            "versions": ["*"]
+          }
+        ]
+      }
+    ]
+  },
+  "esxi": {
+    "versions": ["ESXi 6.5", "ESXi 6.7", "ESXi 7.0", "ESXi 8.0"],
+    "categories": [
+      {
+        "id": "esxi-host",
+        "name": "Host Configuration",
+        "items": [
+          {
+            "id": "esxi-esxconf",
+            "name": "esx.conf",
+            "path": "/etc/vmware/esx.conf",
+            "description": "Main host configuration — networking, NTP, services, boot-time settings. Often the first artifact to examine.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-hostd-config",
+            "name": "hostd config",
+            "path": "/etc/vmware/hostd/config.xml",
+            "description": "Management agent (hostd) configuration — listeners, logging levels, certificate paths.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-passwd",
+            "name": "Local accounts (passwd/shadow)",
+            "path": "/etc/passwd and /etc/shadow",
+            "description": "Local root and ESXi shell accounts. Check for additions beyond root/dcui/nobody/vpxuser.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-ssl",
+            "name": "Host SSL certificates",
+            "path": "/etc/vmware/ssl/",
+            "description": "Host TLS certificate + key, vpxuser cert (for vCenter), CA bundle.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-version",
+            "name": "System version + identity",
+            "path": "(live command)",
+            "description": "ESXi build, product, UUID, hostname — pins the exact patch level the host was on.",
+            "command": "esxcli system version get > version.txt && esxcli system hostname get >> version.txt && esxcli system uuid get >> version.txt",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "esxi-vms",
+        "name": "VM Files",
+        "items": [
+          {
+            "id": "esxi-vmx",
+            "name": ".vmx files (VM configs)",
+            "path": "/vmfs/volumes/<datastore>/<vm>/<vm>.vmx",
+            "description": "Per-VM config — vCPU, memory, NIC MACs, datastore paths of each disk, attached ISOs, nvram path.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-vmdk",
+            "name": "VM disks (.vmdk + -flat.vmdk)",
+            "path": "/vmfs/volumes/<datastore>/<vm>/*.vmdk",
+            "description": "The descriptor (.vmdk) is tiny text; the -flat.vmdk holds actual data. For snapshots the deltas live in -delta.vmdk files.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-vmware-log",
+            "name": "Per-VM log (vmware.log)",
+            "path": "/vmfs/volumes/<datastore>/<vm>/vmware.log",
+            "description": "Per-VM events — power operations, snapshot operations, VMX errors, guest IP discovery.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-suspend",
+            "name": "Suspend / snapshot memory (.vmss, .vmsn)",
+            "path": "/vmfs/volumes/<datastore>/<vm>/*.vmss and *.vmsn",
+            "description": "Saved-state memory dumps — suspended VMs and memory-included snapshots. Equivalent to a RAM capture of the guest at that point.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "esxi-fw",
+        "name": "Firewall & Autostart",
+        "items": [
+          {
+            "id": "esxi-fw-rulesets",
+            "name": "Firewall ruleset XMLs",
+            "path": "/etc/vmware/firewall/",
+            "description": "service.xml plus any custom ruleset XMLs. Each describes which ports a service opens.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-fw-live",
+            "name": "Active firewall rulesets",
+            "path": "(live command)",
+            "description": "Which rulesets are currently enabled and the allowed IP ranges per ruleset.",
+            "command": "esxcli network firewall ruleset list > fw.txt && esxcli network firewall ruleset allowedip list >> fw.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-autostart",
+            "name": "VM auto-start policy",
+            "path": "/etc/vmware/hostd/vmAutoStart.xml",
+            "description": "Which VMs start automatically at host boot and in what order.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-inventory",
+            "name": "VM inventory file",
+            "path": "/etc/vmware/hostd/vmInventory.xml",
+            "description": "Authoritative list of VMs registered with this host — including paths to their .vmx files.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "esxi-logs",
+        "name": "Logs",
+        "items": [
+          {
+            "id": "esxi-hostd-log",
+            "name": "hostd.log",
+            "path": "/var/log/hostd.log",
+            "description": "Management agent log — API calls, authentication events, VM lifecycle requests.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-vmkernel-log",
+            "name": "vmkernel.log + vmkwarning.log + vmksummary.log",
+            "path": "/var/log/vmkernel.log, /var/log/vmkwarning.log, /var/log/vmksummary.log",
+            "description": "Hypervisor kernel messages — vmkernel is verbose; vmkwarning is filtered warnings; vmksummary is daily summaries.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-auth-log",
+            "name": "auth.log",
+            "path": "/var/log/auth.log",
+            "description": "SSH and ESXi shell authentication events.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-shell-log",
+            "name": "shell.log",
+            "path": "/var/log/shell.log",
+            "description": "Every command typed at the ESXi shell. High-value for post-compromise analysis.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-vpxa-log",
+            "name": "vpxa.log (vCenter agent, if managed)",
+            "path": "/var/log/vpxa.log",
+            "description": "Communication with vCenter. Only present on hosts managed by vCenter.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-syslog",
+            "name": "syslog.log",
+            "path": "/var/log/syslog.log",
+            "description": "General ESXi syslog — a catch-all that's separate from the per-component logs above.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "esxi-live",
+        "name": "Live State",
+        "items": [
+          {
+            "id": "esxi-vms-registered",
+            "name": "Registered VMs",
+            "path": "(live command)",
+            "description": "Every VM registered with hostd — World IDs, display names, and the .vmx path.",
+            "command": "vim-cmd vmsvc/getallvms > vms.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-vm-running",
+            "name": "Running VMs (worlds)",
+            "path": "(live command)",
+            "description": "Currently-executing VMs with their World IDs, Config File paths, and VMX Cartel IDs.",
+            "command": "esxcli vm process list > running.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "esxi-net-conns",
+            "name": "Active network connections",
+            "path": "(live command)",
+            "description": "Host-kernel-tracked connections — ESXi's equivalent of netstat.",
+            "command": "esxcli network ip connection list > netconns.txt",
+            "versions": ["*"]
+          }
+        ]
+      }
+    ]
+  },
+  "truenas": {
+    "versions": [
+      "CORE 12.0", "CORE 13.0",
+      "SCALE 22.12 Bluefin", "SCALE 23.10 Cobia", "SCALE 24.04 Dragonfish"
+    ],
+    "categories": [
+      {
+        "id": "truenas-middleware",
+        "name": "Middleware Config",
+        "items": [
+          {
+            "id": "truenas-db",
+            "name": "Middleware database",
+            "path": "/data/freenas-v1.db",
+            "description": "SQLite master config — users, groups, shares (SMB/NFS/iSCSI), replication, cloud-sync, API keys, VMs, apps, alerts, certificates. The single most-important file on a TrueNAS.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "truenas-pwenc",
+            "name": "Password-encryption secret",
+            "path": "/data/pwenc_secret",
+            "description": "Secret key used to encrypt sensitive fields (passwords, API keys) inside freenas-v1.db. Without it those fields cannot be decrypted.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "truenas-zfs",
+        "name": "ZFS State",
+        "items": [
+          {
+            "id": "truenas-zpool-status",
+            "name": "Pool status + history",
+            "path": "(live command)",
+            "description": "Pool health plus full operation history (creates, imports, scrubs, replacements) — goes back to pool creation.",
+            "command": "zpool status -v > zpool.txt && zpool history > zhistory.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "truenas-zfs-list",
+            "name": "Datasets and snapshots",
+            "path": "(live command)",
+            "description": "Complete list of datasets, volumes, and snapshots with sizes and creation dates.",
+            "command": "zfs list -r -t all -o name,used,avail,refer,creation > zfs.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "truenas-be",
+            "name": "Boot environments",
+            "path": "(live command)",
+            "description": "Boot environments — each upgrade/rollback is a snapshot. beadm on CORE, zectl on SCALE.",
+            "command": "beadm list > be.txt 2>/dev/null || zectl list > be.txt",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "truenas-shares",
+        "name": "Shares",
+        "items": [
+          {
+            "id": "truenas-smb-conf",
+            "name": "Samba config",
+            "path": "/usr/local/etc/smb4.conf (CORE) or /etc/samba/smb4.conf (SCALE)",
+            "description": "Generated Samba config — shares, auth backend, VFS modules. UI edits round-trip through the middleware DB.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "truenas-exports",
+            "name": "NFS exports",
+            "path": "/etc/exports",
+            "description": "Active NFS export list — generated from the middleware DB at config apply time.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "truenas-iscsi",
+            "name": "iSCSI targets",
+            "path": "(stored in the middleware DB)",
+            "description": "All iSCSI targets, portals, initiator groups, and extents live in freenas-v1.db; /etc/ctl.conf (CORE) or /etc/scst.conf (SCALE) are generated from it.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "truenas-network",
+        "name": "Network",
+        "items": [
+          {
+            "id": "truenas-rcconf",
+            "name": "FreeBSD rc.conf (CORE)",
+            "path": "/etc/rc.conf",
+            "description": "FreeBSD service + interface config. On CORE, network interfaces, routing, and enabled services live here.",
+            "command": "",
+            "versions": ["CORE 12.0", "CORE 13.0"]
+          },
+          {
+            "id": "truenas-interfaces-scale",
+            "name": "Network config (SCALE)",
+            "path": "/etc/systemd/network/ and /etc/network/interfaces",
+            "description": "On SCALE, networking is driven by the middleware and rendered via systemd-networkd. Check both paths for the active config.",
+            "command": "",
+            "versions": [
+              "SCALE 22.12 Bluefin", "SCALE 23.10 Cobia", "SCALE 24.04 Dragonfish"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "truenas-logs",
+        "name": "Logs",
+        "items": [
+          {
+            "id": "truenas-middlewared-log",
+            "name": "middlewared log",
+            "path": "/var/log/middlewared.log",
+            "description": "Middleware daemon log — every UI action, API call, and internal event routes through here. High-value for forensics.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "truenas-messages-core",
+            "name": "messages (CORE)",
+            "path": "/var/log/messages",
+            "description": "FreeBSD general syslog — kernel and daemon events.",
+            "command": "",
+            "versions": ["CORE 12.0", "CORE 13.0"]
+          },
+          {
+            "id": "truenas-syslog-scale",
+            "name": "syslog (SCALE)",
+            "path": "/var/log/syslog",
+            "description": "Debian-style syslog on SCALE.",
+            "command": "",
+            "versions": [
+              "SCALE 22.12 Bluefin", "SCALE 23.10 Cobia", "SCALE 24.04 Dragonfish"
+            ]
+          },
+          {
+            "id": "truenas-auth-log",
+            "name": "auth.log",
+            "path": "/var/log/auth.log",
+            "description": "SSH + sudo + local-auth events. Same location on both CORE and SCALE.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "truenas-samba-log",
+            "name": "Samba logs",
+            "path": "/var/log/samba4/log.smbd (and per-client logs)",
+            "description": "SMB session events — failed auth, share connects. Each connecting client gets a per-client log file.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "truenas-workloads",
+        "name": "Apps / Jails / VMs",
+        "items": [
+          {
+            "id": "truenas-iocage",
+            "name": "iocage jails (CORE)",
+            "path": "/mnt/<pool>/iocage/jails/<jailname>/",
+            "description": "Each FreeBSD jail has its own rootfs, config, and fstab here. Treat each jail as a nested host worth its own triage pass.",
+            "command": "",
+            "versions": ["CORE 12.0", "CORE 13.0"]
+          },
+          {
+            "id": "truenas-apps-scale",
+            "name": "Apps (SCALE — k3s)",
+            "path": "/mnt/<pool>/ix-applications/",
+            "description": "SCALE apps run on k3s. Charts, per-app PV data, and container state live here. Pair with a k3s kubectl inventory snapshot.",
+            "command": "k3s kubectl get all -A > apps.txt",
+            "versions": [
+              "SCALE 22.12 Bluefin", "SCALE 23.10 Cobia", "SCALE 24.04 Dragonfish"
+            ]
+          },
+          {
+            "id": "truenas-vms",
+            "name": "Virtual machines",
+            "path": "(stored in the middleware DB; disks on ZFS volumes)",
+            "description": "VM definitions live in freenas-v1.db; disks are zvols named `<pool>/<vm-name>-<suffix>`. CORE uses bhyve; SCALE uses KVM/libvirt.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "truenas-system",
+        "name": "SSH & SMART",
+        "items": [
+          {
+            "id": "truenas-ssh",
+            "name": "SSH daemon config",
+            "path": "/usr/local/etc/ssh/ (CORE) or /etc/ssh/ (SCALE)",
+            "description": "sshd_config and host keys. Middleware regenerates sshd_config on changes, so check for unexpected overrides.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "truenas-smart",
+            "name": "SMART disk data",
+            "path": "/var/db/smartd/ (historical attributes)",
+            "description": "Persisted SMART history per disk. Pair with a live smartctl -a snapshot for each disk.",
+            "command": "for d in $(lsblk -ndo NAME 2>/dev/null); do smartctl -a /dev/$d > smart-$d.txt; done",
+            "versions": ["*"]
+          }
+        ]
+      }
+    ]
+  },
+  "vyos": {
+    "versions": ["VyOS 1.3 Equuleus", "VyOS 1.4 Sagitta", "VyOS 1.5 Circinus"],
+    "categories": [
+      {
+        "id": "vyos-config",
+        "name": "Configuration",
+        "items": [
+          {
+            "id": "vyos-config-boot",
+            "name": "config.boot (active config)",
+            "path": "/config/config.boot",
+            "description": "The active, persisted VyOS configuration in its native structured format — firewall rules, NAT, VPN, interfaces, users, everything.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-archive",
+            "name": "Config archive",
+            "path": "/config/archive/config.boot.*",
+            "description": "Every commit auto-saves a timestamped copy here. Build a commit-by-commit timeline of how the box drifted from a known-good baseline.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-scripts",
+            "name": "User scripts",
+            "path": "/config/scripts/",
+            "description": "Custom scripts referenced by VyOS task schedulers, commit hooks, or policy-based routing. Common persistence spot for dropped scripts.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-wireguard-keys",
+            "name": "WireGuard keys",
+            "path": "/config/auth/wireguard/",
+            "description": "Per-interface private keys and peer public keys, if WireGuard tunnels are configured.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-auth-external",
+            "name": "External auth configs",
+            "path": "/config/auth/",
+            "description": "RADIUS, TACACS, LDAP configuration files referenced from config.boot.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "vyos-auth",
+        "name": "Local Users",
+        "items": [
+          {
+            "id": "vyos-passwd",
+            "name": "/etc/passwd",
+            "path": "/etc/passwd",
+            "description": "Regenerated from config.boot on commit. Check for accounts that exist here but not in config.boot (or vice-versa).",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-shadow",
+            "name": "/etc/shadow",
+            "path": "/etc/shadow",
+            "description": "Password hashes. Same caveat as /etc/passwd — hashes for config-defined users are derived on commit.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-ssh-auth",
+            "name": "SSH authorized_keys",
+            "path": "/home/*/.ssh/authorized_keys and /root/.ssh/authorized_keys",
+            "description": "VyOS lets you paste keys into config, and they materialise here. Direct edits bypass config and are a hiding spot.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "vyos-routing-logs",
+        "name": "Routing & Logs",
+        "items": [
+          {
+            "id": "vyos-frr-conf",
+            "name": "frr.conf (generated)",
+            "path": "/etc/frr/frr.conf",
+            "description": "FRRouting config, generated from config.boot. Useful as a sanity check that the routing subsystem matches the declared config.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-frr-logs",
+            "name": "FRR daemon logs",
+            "path": "/var/log/frr/*.log",
+            "description": "Per-protocol FRR logs (bgpd, ospfd, zebra). Session flaps and convergence events land here.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-auth-log",
+            "name": "auth.log",
+            "path": "/var/log/auth.log",
+            "description": "SSH and login auth events — standard Debian-style log under VyOS.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-messages",
+            "name": "messages / syslog",
+            "path": "/var/log/messages and /var/log/syslog",
+            "description": "General system logs. On VyOS both paths may exist — capture whichever is present.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "vyos-live",
+        "name": "Live Operational State",
+        "items": [
+          {
+            "id": "vyos-show-config",
+            "name": "Running config (operational)",
+            "path": "(live command)",
+            "description": "The committed active config rendered as set-commands. Easier to diff against a known-good baseline than config.boot.",
+            "command": "show configuration commands > config-commands.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-show-firewall",
+            "name": "Firewall counters + state",
+            "path": "(live command)",
+            "description": "Rule-by-rule packet/byte counters and dynamic groups.",
+            "command": "show firewall > fw.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-show-nat",
+            "name": "NAT rules + counters",
+            "path": "(live command)",
+            "description": "Source-NAT and destination-NAT rule evaluation — useful for mapping internal ↔ external flows.",
+            "command": "show nat source rules > snat.txt && show nat destination rules > dnat.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "vyos-show-routes",
+            "name": "Routing tables (all protocols)",
+            "path": "(live command)",
+            "description": "Active routing decisions — static, BGP, OSPF, RIP. Also shows route-leaks between VRFs.",
+            "command": "show ip route > route.txt && show ip bgp summary >> route.txt && show ip ospf neighbor >> route.txt",
+            "versions": ["*"]
+          }
+        ]
+      }
+    ]
+  },
+  "pfsense": {
+    "versions": ["pfSense 2.5", "pfSense 2.6", "pfSense 2.7"],
+    "categories": [
+      {
+        "id": "pf-config",
+        "name": "Configuration",
+        "items": [
+          {
+            "id": "pf-config-xml",
+            "name": "config.xml",
+            "path": "/cf/conf/config.xml",
+            "description": "The entire firewall configuration as a single XML file — firewall rules, NAT, VPN, CAs, certificates, users, packages, DHCP, DNS. Single source of truth.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-config-backup",
+            "name": "Config backup archive",
+            "path": "/cf/conf/backup/",
+            "description": "Every config change creates a new timestamped backup file here. Full commit-by-commit history of how the firewall evolved.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-rrd",
+            "name": "RRD traffic databases",
+            "path": "/cf/conf/RRD/",
+            "description": "Per-interface traffic and state-table histograms — throughput, states, queue data over weeks/months.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "pf-live",
+        "name": "Live Firewall State",
+        "items": [
+          {
+            "id": "pf-rules",
+            "name": "Active pf rules",
+            "path": "(live command)",
+            "description": "Compiled ruleset — may differ from config.xml if a package has injected anchors.",
+            "command": "pfctl -sr > rules.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-nat",
+            "name": "Active NAT rules",
+            "path": "(live command)",
+            "description": "Source + destination NAT rules currently in effect.",
+            "command": "pfctl -sn > nat.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-states",
+            "name": "State table",
+            "path": "(live command)",
+            "description": "Every currently-tracked connection — src, dst, protocol, state, bytes. Equivalent to netstat but evaluated by pf.",
+            "command": "pfctl -ss > states.txt",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "pf-logs",
+        "name": "Logs",
+        "items": [
+          {
+            "id": "pf-filter-log",
+            "name": "filter.log (firewall log)",
+            "path": "/var/log/filter.log",
+            "description": "Circular binary log (clog format) of pf pass/block events. Read with `clog` or via the pfSense UI log viewer.",
+            "command": "clog -f /var/log/filter.log > filter.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-system-log",
+            "name": "system.log",
+            "path": "/var/log/system.log",
+            "description": "General system events — also a clog circular log on pfSense.",
+            "command": "clog -f /var/log/system.log > system.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-auth-log",
+            "name": "auth.log",
+            "path": "/var/log/auth.log",
+            "description": "SSH and web UI authentication events.",
+            "command": "clog -f /var/log/auth.log > auth.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-dhcpd-log",
+            "name": "dhcpd.log",
+            "path": "/var/log/dhcpd.log",
+            "description": "DHCP server lease events. Maps MAC addresses to IPs over time.",
+            "command": "clog -f /var/log/dhcpd.log > dhcpd.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-openvpn-log",
+            "name": "openvpn.log",
+            "path": "/var/log/openvpn.log",
+            "description": "OpenVPN server and client session events — who connected, from where, which cert.",
+            "command": "clog -f /var/log/openvpn.log > openvpn.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-ipsec-log",
+            "name": "ipsec.log",
+            "path": "/var/log/ipsec.log",
+            "description": "IPsec daemon events — phase 1/2 negotiation, rekeys, failed auths.",
+            "command": "clog -f /var/log/ipsec.log > ipsec.txt",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-ids-logs",
+            "name": "IDS logs (Snort/Suricata)",
+            "path": "/var/log/snort/ or /var/log/suricata/",
+            "description": "Only present if the Snort or Suricata package is installed. Alerts plus full event logs per interface.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "pf-vpn",
+        "name": "VPN Generated Configs",
+        "items": [
+          {
+            "id": "pf-ipsec-conf",
+            "name": "Generated IPsec config",
+            "path": "/var/etc/ipsec/ipsec.conf and /var/etc/ipsec/ipsec.secrets",
+            "description": "strongSwan config and PSKs rendered from config.xml at apply time.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-openvpn-conf",
+            "name": "Generated OpenVPN configs",
+            "path": "/var/etc/openvpn/server*/ and /var/etc/openvpn/client*/",
+            "description": "Per-server / per-client OpenVPN configuration directories with cert and key material.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-wireguard",
+            "name": "WireGuard configuration (if installed)",
+            "path": "/usr/local/etc/wireguard/ and relevant nodes in config.xml",
+            "description": "WireGuard is a package on pfSense 2.5/2.6 and native from 2.7. Keys end up in config.xml and/or this directory.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "pf-auth",
+        "name": "Local Authentication",
+        "items": [
+          {
+            "id": "pf-master-passwd",
+            "name": "FreeBSD password DB",
+            "path": "/etc/master.passwd, /etc/pwd.db, /etc/spwd.db",
+            "description": "The system-level FreeBSD account database. pfSense web-UI users live in config.xml; system-level users (root, admin) are here.",
+            "command": "",
+            "versions": ["*"]
+          },
+          {
+            "id": "pf-web-users",
+            "name": "Web UI users (in config.xml)",
+            "path": "/cf/conf/config.xml (system/user nodes)",
+            "description": "Web UI users, groups, and their hashed passwords live in config.xml. Attackers may add a new admin user — diff against a clean baseline.",
+            "command": "",
+            "versions": ["*"]
+          }
+        ]
+      }
+    ]
+  }
+}

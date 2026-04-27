@@ -57,3 +57,10 @@ Every card has **✎ Edit** and **✕** buttons in the top-right corner. Edits o
 ```bash
 sudo chown www-data:www-data commands.json
 ```
+
+If the permissions are wrong, `POST save` / `POST delete` return HTTP 500 with `"could not write commands.json (check file permissions)"` rather than silently appearing to succeed.
+
+## Security notes
+
+- `api.php` enforces an **Origin / Referer same-host check** on all POST requests, so opportunistic drive-by writes are rejected with 403. It is *not* real auth — a deliberate attacker who spoofs headers can still write. Fine for a personal site, not fine for anything bigger.
+- GET is unrestricted, so `commands.json` is world-readable by design.

@@ -1,53 +1,51 @@
 (function () {
   "use strict";
 
-  var EPOCH = new Date("2025-01-01T00:00:00Z");
+  const EPOCH = new Date("2025-01-01T00:00:00Z");
 
-  var state = {
+  const state = {
     words: [],
-    dayOffset: 0
+    dayOffset: 0,
   };
 
-  /* ── Theme ──────────────────────────────────────────── */
-
-  function applyTheme(isLight) {
-    document.body.classList.toggle("light", isLight);
-    document.getElementById("theme-btn").textContent = isLight ? "\u263D" : "\u2600";
-  }
 
   /* ── Daily index ────────────────────────────────────── */
 
   function getTargetDate(offset) {
-    var today = new Date();
+    const today = new Date();
     today.setHours(0, 0, 0, 0);
     return new Date(today.getTime() + offset * 86400000);
   }
 
   function getDayIndex(offset) {
-    var target = getTargetDate(offset);
-    var diff = Math.floor((target - EPOCH) / 86400000);
-    var len = state.words.length;
+    const target = getTargetDate(offset);
+    const diff = Math.floor((target - EPOCH) / 86400000);
+    const len = state.words.length;
     return ((diff % len) + len) % len;
   }
 
   function formatDate(date) {
-    var y = date.getFullYear();
-    var m = String(date.getMonth() + 1).padStart(2, "0");
-    var d = String(date.getDate()).padStart(2, "0");
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
     return y + "-" + m + "-" + d;
   }
 
   /* ── DOM refs (set in init) ─────────────────────────── */
 
-  var dateDisplay, wordDisplay, defDisplay, wordCard, prevBtn, nextBtn, todayBtn;
+  let dateDisplay, wordDisplay, defDisplay, wordCard, prevBtn, nextBtn, todayBtn;
 
   function render() {
     if (!state.words.length) return;
 
-    var index = getDayIndex(state.dayOffset);
-    var entry = state.words[index];
-    var target = getTargetDate(state.dayOffset);
-    var label = formatDate(target);
+    /* First render after fetch clears the ".loading" placeholder set
+       in the HTML so the card transitions out of its loading state. */
+    wordCard.classList.remove("loading");
+
+    const index = getDayIndex(state.dayOffset);
+    const entry = state.words[index];
+    const target = getTargetDate(state.dayOffset);
+    let label = formatDate(target);
 
     if (state.dayOffset === 0) label += "  (today)";
     else if (state.dayOffset === -1) label += "  (yesterday)";
@@ -62,6 +60,12 @@
     wordCard.classList.remove("fade-in");
     void wordCard.offsetWidth;
     wordCard.classList.add("fade-in");
+
+    /* retrigger word scale-in — separate animation from the card fade
+       so the word feels like it "arrives" rather than appearing. */
+    wordDisplay.classList.remove("word-enter");
+    void wordDisplay.offsetWidth;
+    wordDisplay.classList.add("word-enter");
   }
 
   /* ── Navigation ─────────────────────────────────────── */
@@ -84,25 +88,42 @@
 
   /* ── Speech ─────────────────────────────────────────── */
 
-  var speakBtn;
+  let speakBtn;
+  let speakErrorTimer = null;
+
+  function showSpeakError(msg) {
+    const el = document.getElementById("speak-error");
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove("hidden");
+    clearTimeout(speakErrorTimer);
+    speakErrorTimer = setTimeout(() => el.classList.add("hidden"), 3000);
+  }
 
   function speakWord() {
     if (!state.words.length) return;
-    var index = getDayIndex(state.dayOffset);
-    var word = state.words[index].word;
+    if (!("speechSynthesis" in window)) {
+      showSpeakError("speech synthesis not supported in this browser");
+      return;
+    }
+    const index = getDayIndex(state.dayOffset);
+    const word = state.words[index].word;
     speechSynthesis.cancel();
-    var utter = new SpeechSynthesisUtterance(word);
+    const utter = new SpeechSynthesisUtterance(word);
     utter.lang = "en-US";
     utter.rate = 0.85;
-    utter.onstart = function () { speakBtn.disabled = true; };
-    utter.onend   = function () { speakBtn.disabled = false; };
-    utter.onerror = function () { speakBtn.disabled = false; };
+    utter.onstart = () => { speakBtn.disabled = true; };
+    utter.onend   = () => { speakBtn.disabled = false; };
+    utter.onerror = (e) => {
+      speakBtn.disabled = false;
+      showSpeakError("playback failed" + (e && e.error ? " (" + e.error + ")" : ""));
+    };
     speechSynthesis.speak(utter);
   }
 
   /* ── Init ───────────────────────────────────────────── */
 
-  document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", () => {
     dateDisplay = document.getElementById("date-display");
     wordDisplay = document.getElementById("word-display");
     defDisplay = document.getElementById("definition-display");
@@ -113,30 +134,25 @@
     speakBtn = document.getElementById("speak-btn");
 
     fetch("words.json")
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
+      .then((res) => res.json())
+      .then((data) => {
         state.words = data;
         render();
       })
-      .catch(function () {
+      .catch((e) => {
+        console.warn("word-of-the-day: words.json load failed", e);
         state.words = [{ word: "error", definition: "Failed to load word list." }];
         render();
       });
 
-    applyTheme(localStorage.getItem("siteTheme") === "light");
-
-    document.getElementById("theme-btn").addEventListener("click", function () {
-      var nowLight = !document.body.classList.contains("light");
-      applyTheme(nowLight);
-      localStorage.setItem("siteTheme", nowLight ? "light" : "dark");
-    });
+    siteTheme.init();
 
     prevBtn.addEventListener("click", prevDay);
     nextBtn.addEventListener("click", nextDay);
     todayBtn.addEventListener("click", goToday);
     speakBtn.addEventListener("click", speakWord);
 
-    document.addEventListener("keydown", function (e) {
+    document.addEventListener("keydown", (e) => {
       if (e.key === "ArrowLeft") prevDay();
       else if (e.key === "ArrowRight") nextDay();
     });

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forensics Artifact Checklist</title>
+  <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg" />
+  <link rel="stylesheet" href="../../theme.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>FORENSICS</h1>
+    <p class="subtitle">Artifact collection checklist &mdash; Windows &amp; Linux</p>
+    <a id="home-btn" href="../../" title="Back to toolbox">~/</a>
+    <button id="theme-btn" title="Toggle theme">&#9788;</button>
+  </header>
+
+  <div class="toolbar">
+    <select id="os-select" class="os-select" aria-label="Platform"></select>
+    <select id="version-select" class="version-select hidden" aria-label="Version"></select>
+    <span class="toolbar-spacer"></span>
+    <span id="progress" class="progress" aria-live="polite"></span>
+    <button id="clear-btn" class="toolbar-btn hidden" title="Uncheck everything for this OS/version">Clear</button>
+    <button id="edit-btn" class="toolbar-btn hidden" title="Edit artifact list">Edit</button>
+    <button id="save-btn" class="toolbar-btn hidden" title="Save changes to server">Save</button>
+    <button id="cancel-btn" class="toolbar-btn hidden" title="Discard edits">Cancel</button>
+  </div>
+
+  <main>
+    <div id="empty-state" class="empty-state">
+      <p>Choose a <strong>platform</strong> from the dropdown to begin.</p>
+    </div>
+    <div id="artifact-list" class="artifact-list"></div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="../storage.js"></script>
+  <script src="../theme.js"></script>
+  <script src="app.js"></script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js").catch(function(e){console.warn("sw registration failed",e);})</script>
+</body>
+</html>

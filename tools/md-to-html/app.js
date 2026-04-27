@@ -1,6 +1,17 @@
 (function () {
   "use strict";
 
+  /* Short document.getElementById wrapper that throws a descriptive
+     error when the id is missing, rather than letting .value or
+     .textContent NRE-crash with "Cannot read property of null".
+     Used in the customizer/preview paths where the element list is
+     long and a silent drift would be painful to debug.              */
+  function $(id) {
+    const el = document.getElementById(id);
+    if (!el) throw new Error("md-to-html: missing element #" + id);
+    return el;
+  }
+
   // ── Themes ────────────────────────────────────────────────────────────────
 
   const THEMES = {
@@ -83,7 +94,27 @@
     return JSON.parse(JSON.stringify(obj));
   }
 
+  const SAVED_THEMES_KEY = "mdToHtmlSavedThemes";
+
+  function loadSavedThemes() {
+    try {
+      const raw = safeStorage.get(SAVED_THEMES_KEY);
+      return raw ? (JSON.parse(raw) || {}) : {};
+    } catch (e) {
+      console.warn("md-to-html: saved themes JSON invalid", e);
+      return {};
+    }
+  }
+
+  function persistSavedThemes(dict) {
+    safeStorage.save(SAVED_THEMES_KEY, JSON.stringify(dict));
+  }
+
   function activeTheme() {
+    if (currentThemeName.startsWith("preset:")) {
+      const name = currentThemeName.slice(7);
+      return loadSavedThemes()[name] || THEMES.dracula;
+    }
     return currentThemeName === "custom" ? customTheme : THEMES[currentThemeName];
   }
 
@@ -400,7 +431,12 @@
       }
 
       // ── Paragraph  (anything else)
+      // A line starting with "|" that wasn't consumed by the table branch
+      // above is just prose (stray pipe) — include it in the paragraph rather
+      // than excluding it, which previously caused an infinite loop because
+      // nothing would advance `i`.
       const pLines = [];
+      const paraStart = i;
       while (
         i < lines.length &&
         lines[i].trim() !== "" &&
@@ -409,9 +445,14 @@
         !/^>\s?/.test(lines[i]) &&
         !/^(- ?){3,}$|^(\* ?){3,}$|^(_ ?){3,}$/.test(lines[i].trim()) &&
         !/^\s*[-*+]\s+/.test(lines[i]) &&
-        !/^\s*\d+\.\s+/.test(lines[i]) &&
-        !/^\|/.test(lines[i])
+        !/^\s*\d+\.\s+/.test(lines[i])
       ) {
+        // Bail if the line looks like a valid table header (with separator
+        // on next line) — let the outer loop re-enter the table branch.
+        if (i > paraStart && /^\|/.test(lines[i]) && i + 1 < lines.length &&
+            /^\|[-:| ]+\|/.test(lines[i + 1])) {
+          break;
+        }
         pLines.push(lines[i]);
         i++;
       }
@@ -446,9 +487,42 @@
   // ── UI actions ────────────────────────────────────────────────────────────
 
   function convert() {
-    const text = document.getElementById("md-input").value;
-    document.getElementById("html-output").value = text.trim() ? parseMd(text) : "";
+    try {
+      const text = document.getElementById("md-input").value;
+      document.getElementById("html-output").value = text.trim() ? parseMd(text) : "";
+    } catch (e) {
+      // Swallow parse errors so one malformed document doesn't break the tool
+      // and, crucially, doesn't prevent the surrounding save from running.
+      // The previous HTML output is left in place.
+      console.error("md-to-html: parse failed", e);
+    }
   }
+
+  // Debounced preview update for the input handler — avoids re-parsing the
+  // full document on every keystroke. For very large inputs the parser is
+  // synchronous and blocks the main thread for hundreds of ms, so we
+  // stretch the debounce once the input crosses a threshold and warn the
+  // user once per session that preview updates are slowed.
+  let convertTimer = null;
+  let largeInputWarned = false;
+  const LARGE_INPUT_THRESHOLD = 50000;  /* chars; ~50 KB of markdown */
+  const HUGE_INPUT_THRESHOLD  = 200000; /* chars; warn loudly        */
+
+  function scheduleConvert() {
+    clearTimeout(convertTimer);
+    const len = document.getElementById("md-input").value.length;
+    if (len > HUGE_INPUT_THRESHOLD && !largeInputWarned) {
+      largeInputWarned = true;
+      showToast("Large document — preview updates slowed to keep the editor responsive");
+    }
+    /* Stretch debounce past LARGE_INPUT_THRESHOLD so we aren't re-parsing
+       tens of KB on every keystroke. 600 ms gives the user time to pause
+       typing before a full parse kicks in.                             */
+    convertTimer = setTimeout(convert, len > LARGE_INPUT_THRESHOLD ? 600 : 150);
+  }
+
+  // Storage access goes through window.safeStorage (tools/storage.js) which
+  // wraps setItem/removeItem/getItem to survive quota or private-mode errors.
 
   let toastTimer = null;
 
@@ -460,10 +534,33 @@
     toastTimer = setTimeout(() => toast.classList.remove("visible"), 2000);
   }
 
+  /* Clipboard with a hidden-textarea fallback — the async Clipboard
+     API requires a secure context, which breaks copy on file://
+     or plain http:// (e.g. some internal hosts). Fall through to
+     execCommand("copy") as a last resort. */
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity  = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); }
+      catch (e) { console.warn("copyText fallback threw", e); }
+      ta.remove();
+      ok ? resolve() : reject(new Error("execCommand copy failed"));
+    });
+  }
+
   function copyMD() {
     const val = document.getElementById("md-input").value;
     if (!val.trim()) { showToast("Nothing to copy"); return; }
-    navigator.clipboard.writeText(val).then(
+    copyText(val).then(
       () => showToast("Copied!"),
       () => showToast("Copy failed")
     );
@@ -472,7 +569,7 @@
   function copyHTML() {
     const val = document.getElementById("html-output").value;
     if (!val) { showToast("Nothing to copy"); return; }
-    navigator.clipboard.writeText(val).then(
+    copyText(val).then(
       () => showToast("Copied!"),
       () => showToast("Copy failed")
     );
@@ -512,8 +609,8 @@
     const reader = new FileReader();
     reader.onload = (ev) => {
       document.getElementById("md-input").value = ev.target.result;
+      safeStorage.save("mdToHtmlContent", ev.target.result);
       convert();
-      localStorage.setItem("mdToHtmlContent", ev.target.result);
     };
     reader.readAsText(file);
     e.target.value = ""; // allow re-uploading the same file
@@ -528,17 +625,156 @@
 
   function openCustomizer() {
     const t = customTheme;
-    document.getElementById("c-bg").value        = hexFromCss(t.body.background);
-    document.getElementById("c-text").value      = hexFromCss(t.body.color);
+    $("c-bg").value        = hexFromCss(t.body.background);
+    $("c-text").value      = hexFromCss(t.body.color);
     ["h1","h2","h3","h4","h5","h6"].forEach(h => {
-      document.getElementById(`c-${h}`).value = hexFromCss(t[h].color);
+      $(`c-${h}`).value = hexFromCss(t[h].color);
     });
-    document.getElementById("c-link").value      = hexFromCss(t.a.color);
-    document.getElementById("c-code-bg").value   = hexFromCss(t.code.background);
-    document.getElementById("c-code-text").value = hexFromCss(t.code.color);
-    document.getElementById("c-blockquote").value = hexFromCss(t.blockquote.color);
-    document.getElementById("c-strong").value    = hexFromCss(t.strong.color);
-    document.getElementById("customize-modal").classList.remove("hidden");
+    $("c-link").value      = hexFromCss(t.a.color);
+    $("c-code-bg").value   = hexFromCss(t.code.background);
+    $("c-code-text").value = hexFromCss(t.code.color);
+    $("c-blockquote").value = hexFromCss(t.blockquote.color);
+    $("c-strong").value    = hexFromCss(t.strong.color);
+    updateCustomizerPreview();
+    renderSavedPresets();
+    $("customize-modal").classList.remove("hidden");
+  }
+
+  /* Build a theme object from the current state of the colour pickers.
+     Shared by "Apply" (write to customTheme) and "Save as preset"
+     (write to savedThemes dict).                                      */
+  function buildThemeFromPickers() {
+    const t = deepCopy(customTheme);
+    t.body.background = $("c-bg").value;
+    t.body.color      = $("c-text").value;
+    ["h1","h2","h3","h4","h5","h6"].forEach(h => {
+      t[h].color = $(`c-${h}`).value;
+    });
+    t.a.color         = $("c-link").value;
+    t.code.background = $("c-code-bg").value;
+    t.pre.background  = $("c-code-bg").value;
+    t.code.color      = $("c-code-text").value;
+    t.pre.color       = $("c-code-text").value;
+    t.blockquote.color      = $("c-blockquote").value;
+    t.blockquote.borderLeft = t.blockquote.borderLeft.replace(/#[0-9a-fA-F]+/, $("c-blockquote").value);
+    t.strong.color    = $("c-strong").value;
+    return t;
+  }
+
+  function savePreset() {
+    const input = $("preset-name-input");
+    const name = input.value.trim();
+    if (!name) { showToast("Enter a name for the preset"); return; }
+    const dict = loadSavedThemes();
+    dict[name] = buildThemeFromPickers();
+    persistSavedThemes(dict);
+    input.value = "";
+    renderSavedPresets();
+    renderThemeSelectOptions();
+    showToast(`Preset "${name}" saved`);
+  }
+
+  function deletePreset(name) {
+    const dict = loadSavedThemes();
+    delete dict[name];
+    persistSavedThemes(dict);
+    /* If the dropdown was pointing at this preset, drop back to Custom. */
+    if (currentThemeName === "preset:" + name) {
+      currentThemeName = "custom";
+      $("theme-select").value = "custom";
+      convert();
+    }
+    renderSavedPresets();
+    renderThemeSelectOptions();
+    showToast(`Preset "${name}" deleted`);
+  }
+
+  function loadPreset(name) {
+    const theme = loadSavedThemes()[name];
+    if (!theme) return;
+    /* Load into the pickers so the user can keep editing; also point
+       currentThemeName at the preset so future Apply / Convert use it. */
+    customTheme = deepCopy(theme);
+    currentThemeName = "preset:" + name;
+    $("c-bg").value        = hexFromCss(customTheme.body.background);
+    $("c-text").value      = hexFromCss(customTheme.body.color);
+    ["h1","h2","h3","h4","h5","h6"].forEach(h => {
+      $(`c-${h}`).value = hexFromCss(customTheme[h].color);
+    });
+    $("c-link").value      = hexFromCss(customTheme.a.color);
+    $("c-code-bg").value   = hexFromCss(customTheme.code.background);
+    $("c-code-text").value = hexFromCss(customTheme.code.color);
+    $("c-blockquote").value = hexFromCss(customTheme.blockquote.color);
+    $("c-strong").value    = hexFromCss(customTheme.strong.color);
+    updateCustomizerPreview();
+    $("theme-select").value = currentThemeName;
+    convert();
+  }
+
+  function renderSavedPresets() {
+    const list = $("saved-presets-list");
+    list.textContent = "";
+    const dict = loadSavedThemes();
+    const names = Object.keys(dict).sort();
+    if (!names.length) {
+      const none = document.createElement("span");
+      none.className = "saved-presets-none";
+      none.textContent = "none yet";
+      list.appendChild(none);
+      return;
+    }
+    for (const name of names) {
+      const chip = document.createElement("span");
+      chip.className = "saved-preset-chip";
+      const loadBtn = document.createElement("button");
+      loadBtn.type = "button";
+      loadBtn.className = "preset-load";
+      loadBtn.textContent = name;
+      loadBtn.addEventListener("click", () => loadPreset(name));
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "preset-delete";
+      delBtn.textContent = "×";
+      delBtn.title = "Delete preset";
+      delBtn.addEventListener("click", () => deletePreset(name));
+      chip.append(loadBtn, delBtn);
+      list.appendChild(chip);
+    }
+  }
+
+  /* Sync the theme-select dropdown with the current saved-presets
+     dict: remove stale preset options, add fresh ones. Built-in
+     options (dracula/nord/custom) are preserved by tagging added
+     options with .preset-option.                                    */
+  function renderThemeSelectOptions() {
+    const sel = $("theme-select");
+    sel.querySelectorAll("option.preset-option").forEach(o => o.remove());
+    const dict = loadSavedThemes();
+    for (const name of Object.keys(dict).sort()) {
+      const opt = document.createElement("option");
+      opt.className = "preset-option";
+      opt.value = "preset:" + name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    }
+    sel.value = currentThemeName; /* re-apply selection in case it was wiped */
+  }
+
+  /* Sync every colour picker to a CSS custom property on the preview body.
+     Cheaper than re-rendering the full converter on each nudge, and lets
+     the user see code/background contrast before committing.             */
+  function updateCustomizerPreview() {
+    const body = document.getElementById("customize-preview-body");
+    if (!body) return;
+    const get = (id) => document.getElementById(id).value;
+    body.style.setProperty("--preview-bg",        get("c-bg"));
+    body.style.setProperty("--preview-text",      get("c-text"));
+    body.style.setProperty("--preview-h1",        get("c-h1"));
+    body.style.setProperty("--preview-strong",    get("c-strong"));
+    body.style.setProperty("--preview-link",      get("c-link"));
+    body.style.setProperty("--preview-bq",        get("c-blockquote"));
+    body.style.setProperty("--preview-code-bg",   get("c-code-bg"));
+    body.style.setProperty("--preview-code-text", get("c-code-text"));
   }
 
   function applyCustomizer() {
@@ -736,6 +972,98 @@
     convert();
   }
 
+  // ── Table dimension picker ────────────────────────────
+  /* Hover-grid picker modelled on the one in word processors: mouse
+     over the grid to highlight an R×C rectangle, click to insert a
+     markdown table of that size. R counts total rows including the
+     header; the separator line is written but not counted.         */
+
+  const TP_ROWS = 10;
+  const TP_COLS = 10;
+
+  function buildTableMarkdown(rows, cols) {
+    const header = "| " + Array(cols).fill("Header").join(" | ") + " |";
+    const sep    = "| " + Array(cols).fill("------").join(" | ") + " |";
+    const row    = "| " + Array(cols).fill("Cell  ").join(" | ") + " |";
+    const bodyRows = Math.max(0, rows - 1);
+    const body = bodyRows > 0 ? "\n" + Array(bodyRows).fill(row).join("\n") : "";
+    return "\n" + header + "\n" + sep + body + "\n";
+  }
+
+  function initTablePicker() {
+    const grid = document.getElementById("tp-grid");
+    if (!grid) return;
+
+    /* Build the grid once on init; open/close just shows the wrapper. */
+    for (let r = 1; r <= TP_ROWS; r++) {
+      for (let c = 1; c <= TP_COLS; c++) {
+        const cell = document.createElement("div");
+        cell.className = "tp-cell";
+        cell.dataset.r = String(r);
+        cell.dataset.c = String(c);
+        grid.appendChild(cell);
+      }
+    }
+
+    const label = document.getElementById("tp-label");
+    const cells = Array.from(grid.querySelectorAll(".tp-cell"));
+
+    function highlight(r, c) {
+      label.textContent = r + " × " + c + (r === 1 && c === 1 ? " (header only)" : "");
+      for (const cell of cells) {
+        cell.classList.toggle("on",
+          Number(cell.dataset.r) <= r && Number(cell.dataset.c) <= c);
+      }
+    }
+
+    grid.addEventListener("mousemove", (e) => {
+      const cell = e.target.closest(".tp-cell");
+      if (!cell) return;
+      highlight(Number(cell.dataset.r), Number(cell.dataset.c));
+    });
+
+    grid.addEventListener("mouseleave", () => {
+      for (const cell of cells) cell.classList.remove("on");
+      label.textContent = "hover to pick size";
+    });
+
+    grid.addEventListener("click", (e) => {
+      const cell = e.target.closest(".tp-cell");
+      if (!cell) return;
+      const r = Number(cell.dataset.r);
+      const c = Number(cell.dataset.c);
+      closeTablePicker();
+      insertAtCursor(buildTableMarkdown(r, c));
+    });
+
+    /* Backdrop click + close button + Escape. */
+    const picker = document.getElementById("table-picker");
+    picker.addEventListener("click", (e) => {
+      if (e.target === picker) closeTablePicker();
+    });
+    document.getElementById("tp-close").addEventListener("click", closeTablePicker);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !picker.classList.contains("hidden")) {
+        closeTablePicker();
+      }
+    });
+  }
+
+  function openTablePicker() {
+    const picker = document.getElementById("table-picker");
+    const label = document.getElementById("tp-label");
+    picker.querySelectorAll(".tp-cell.on").forEach(c => c.classList.remove("on"));
+    label.textContent = "hover to pick size";
+    picker.classList.remove("hidden");
+  }
+
+  function closeTablePicker() {
+    document.getElementById("table-picker").classList.add("hidden");
+    /* Put focus back on the editor so the user can keep typing. */
+    const ta = document.getElementById("md-input");
+    if (ta) ta.focus();
+  }
+
   function prefixLines(prefixFn) {
     const ta = document.getElementById("md-input");
     const val = ta.value;
@@ -821,7 +1149,7 @@
         convert();
         break;
       case "table":
-        insertAtCursor("\n| Header | Header |\n| ------ | ------ |\n| Cell   | Cell   |\n");
+        openTablePicker();
         break;
       case "callout":
         insertAtCursor("\n> [!NOTE]\n> Content\n");
@@ -836,7 +1164,7 @@
       // Clipboard
       case "cut":
         if (ctxState.text) {
-          navigator.clipboard.writeText(ctxState.text).then(function () {
+          copyText(ctxState.text).then(function () {
             var val = ta.value;
             ta.value = val.slice(0, ctxState.start) + val.slice(ctxState.end);
             ta.focus();
@@ -847,7 +1175,7 @@
         break;
       case "copy":
         if (ctxState.text) {
-          navigator.clipboard.writeText(ctxState.text).then(
+          copyText(ctxState.text).then(
             function () { showToast("Copied!"); },
             function () { showToast("Clipboard access denied"); }
           );
@@ -873,12 +1201,6 @@
 
   // ── Site-wide light/dark theme ────────────────────────────────────────────
 
-  function applyTheme(isLight) {
-    document.body.classList.toggle("light", isLight);
-    const btn = document.getElementById("theme-btn");
-    if (btn) btn.textContent = isLight ? "\u263D" : "\u2600";
-  }
-
   // ── Init ──────────────────────────────────────────────────────────────────
 
   // ── Expand / collapse panes ───────────────────────────────────────────────
@@ -901,16 +1223,14 @@
   function init() {
     customTheme = deepCopy(THEMES.dracula);
 
-    applyTheme(localStorage.getItem("siteTheme") === "light");
-    document.getElementById("theme-btn").addEventListener("click", () => {
-      const nowLight = !document.body.classList.contains("light");
-      applyTheme(nowLight);
-      localStorage.setItem("siteTheme", nowLight ? "light" : "dark");
-    });
+    siteTheme.init();
+    initTablePicker();
 
     document.getElementById("md-input").addEventListener("input", () => {
-      convert();
-      localStorage.setItem("mdToHtmlContent", document.getElementById("md-input").value);
+      // Save BEFORE converting so that if the parser ever hangs or throws,
+      // the latest textarea content is still persisted for next page load.
+      safeStorage.save("mdToHtmlContent", document.getElementById("md-input").value);
+      scheduleConvert();
     });
 
     document.getElementById("theme-select").addEventListener("change", (e) => {
@@ -931,6 +1251,16 @@
     document.getElementById("customize-close").addEventListener("click", closeCustomizer);
     document.getElementById("customize-apply").addEventListener("click", applyCustomizer);
     document.getElementById("customize-cancel").addEventListener("click", closeCustomizer);
+    document.getElementById("save-preset-btn").addEventListener("click", savePreset);
+    document.getElementById("preset-name-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); savePreset(); }
+    });
+    document
+      .querySelectorAll('#customize-modal input[type="color"]')
+      .forEach((inp) => inp.addEventListener("input", updateCustomizerPreview));
+
+    /* Populate the theme-select with any saved presets on load. */
+    renderThemeSelectOptions();
     document.getElementById("customize-modal").addEventListener("click", (e) => {
       if (e.target === document.getElementById("customize-modal")) closeCustomizer();
     });
@@ -998,7 +1328,7 @@ Inline \`code\` is styled too.
       convert();
     }
 
-    const saved = localStorage.getItem("mdToHtmlContent");
+    const saved = safeStorage.get("mdToHtmlContent");
 
     if (saved && saved.trim()) {
       const modal = document.getElementById("restore-modal");
@@ -1010,7 +1340,7 @@ Inline \`code\` is styled too.
       });
 
       document.getElementById("restore-clear").addEventListener("click", () => {
-        localStorage.removeItem("mdToHtmlContent");
+        safeStorage.remove("mdToHtmlContent");
         loadContent(DEMO);
         modal.classList.add("hidden");
       });

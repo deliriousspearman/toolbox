@@ -297,6 +297,19 @@ main {
   display: none;
 }
 
+/* "Valid parse but zero occurrences in 4 years" — same container
+   as .description but with warning-amber emphasis so the user
+   notices their schedule will never fire.                       */
+.description.description-warning {
+  border-color: #b59f3b;
+  color: var(--text);
+}
+
+.description.description-warning::before {
+  content: '! ';
+  color: #b59f3b;
+}
+
 /* ── Results section ─────────────────────────────────── */
 
 .results-section {
@@ -325,6 +338,30 @@ main {
 .count-label {
   font-size: 0.7rem;
   color: var(--text-dim);
+}
+
+/* ── Empty-state hint ────────────────────────────────── */
+/* Shown when the cron input is blank — gives first-time visitors
+   something to read where the results table would otherwise appear. */
+
+.empty-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2.25rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.empty-hint.hidden { display: none; }
+
+.empty-hint .empty-sigil {
+  color: var(--accent);
+  font-size: 0.9rem;
 }
 
 /* ── Results table ───────────────────────────────────── */
@@ -390,19 +427,29 @@ main {
   letter-spacing: 0.04em;
   white-space: nowrap;
   border-bottom: 1px solid var(--border);
+  /* Each cell slide-reveals on render; per-row stagger is set inline
+     in JS via style.animationDelay so the rhythm is independent of
+     column count.                                                    */
+  opacity: 0;
+  transform: translateX(-8px);
+  animation: rtRowSlide 0.3s cubic-bezier(.2, .8, .2, 1) forwards;
 }
 
-.rt-row:last-child .rt-cell {
-  border-bottom: none;
-}
-
-.rt-row:nth-child(even) .rt-cell {
-  background: #111;
+@keyframes rtRowSlide {
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .rt-cell.utc-cell {
   color: var(--accent);
+  /* The leftmost cell carries the row stripe — 2px accent border that
+     cycles through three colours to build a visual rhythm across rows
+     without the alternating-zebra feel.                              */
+  border-left: 2px solid transparent;
 }
+
+.rt-cell.rt-stripe-0 { border-left-color: var(--accent); }
+.rt-cell.rt-stripe-1 { border-left-color: #b59f3b; }
+.rt-cell.rt-stripe-2 { border-left-color: var(--text-dim); }
 
 .rt-cell.tz-cell {
   color: var(--text-dim);

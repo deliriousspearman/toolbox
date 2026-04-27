@@ -16,26 +16,35 @@
   async function loadCommands() {
     try {
       const res = await fetch("api.php");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       commands = await res.json();
-    } catch {
+    } catch (e) {
+      /* Keep the in-memory state empty so the UI still renders, but
+         warn loudly and toast so a silent empty list doesn't hide a
+         real server problem. showToast is hoisted so it's safe to
+         call here even though init() hasn't run yet.               */
+      console.warn("shell-explain: loadCommands failed", e);
       commands = [];
+      showToast("Couldn't load commands — " + (e.message || "network error"));
     }
   }
 
   async function saveCommand(entry) {
-    await fetch("api.php", {
+    const res = await fetch("api.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "save", entry }),
     });
+    if (!res.ok) throw new Error(`save failed (HTTP ${res.status})`);
   }
 
   async function deleteCommand(id) {
-    await fetch("api.php", {
+    const res = await fetch("api.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", id }),
     });
+    if (!res.ok) throw new Error(`delete failed (HTTP ${res.status})`);
   }
 
   // ── Token colouriser ──────────────────────────────────────────────────────
@@ -72,9 +81,23 @@
 
   // ── Card builder ──────────────────────────────────────────────────────────
 
+  /* Stable hash used to map a category name to a stripe colour — same
+     category always paints the same stripe, so users can scan-group
+     cards visually without explicit per-category colour config.      */
+  function catHash(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  }
+
   function makeCard(cmd) {
     const card = document.createElement("div");
     card.className = "cmd-card";
+
+    const firstCat = (cmd.categories || [])[0];
+    if (firstCat) {
+      card.style.setProperty("--card-stripe", COLORS[catHash(firstCat) % COLORS.length]);
+    }
 
     // ── Command string with coloured tokens ──────────────────────────────
     const cmdLine = document.createElement("div");
@@ -115,7 +138,22 @@
       tagsEl.appendChild(tag);
     });
 
-    // ── Parts list ───────────────────────────────────────────────────────
+    // ── Parts list (collapsible, open by default) ───────────────────────
+    const partsWrap = document.createElement("div");
+    partsWrap.className = "cmd-parts-wrap";
+
+    const partsToggle = document.createElement("button");
+    partsToggle.type = "button";
+    partsToggle.className = "parts-toggle";
+    const partsArrow = document.createElement("span");
+    partsArrow.className = "parts-arrow";
+    partsArrow.textContent = "▾"; /* ▾ */
+    partsToggle.appendChild(partsArrow);
+    partsToggle.appendChild(document.createTextNode(" Parts"));
+    partsToggle.addEventListener("click", () => {
+      card.classList.toggle("parts-collapsed");
+    });
+
     const partsEl = document.createElement("div");
     partsEl.className = "cmd-parts";
 
@@ -141,9 +179,11 @@
       partsEl.appendChild(row);
     });
 
+    partsWrap.append(partsToggle, partsEl);
+
     card.append(cmdLine, desc);
     if (cats.length > 0) card.appendChild(tagsEl);
-    card.appendChild(partsEl);
+    card.appendChild(partsWrap);
 
     // ── Edit / delete controls (all cards) ───────────────────────────────
     const controls = document.createElement("div");
@@ -237,10 +277,26 @@
     list.appendChild(frag);
   }
 
+  // ── Toast ─────────────────────────────────────────────────────────────────
+
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("visible");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("visible"), 2500);
+  }
+
   // ── Delete a command ──────────────────────────────────────────────────────
 
   async function deleteEntry(id) {
-    await deleteCommand(id);
+    try {
+      await deleteCommand(id);
+    } catch (e) {
+      showToast("Delete failed — " + e.message);
+      return;
+    }
     commands = commands.filter((c) => c.id !== id);
     renderCategoryFilters();
     renderList();
@@ -402,7 +458,13 @@
       categories,
     };
 
-    await saveCommand(entry);
+    try {
+      await saveCommand(entry);
+    } catch (e) {
+      errorEl.textContent = "Save failed — changes not persisted. " + e.message;
+      errorEl.classList.remove("hidden");
+      return; // leave the modal open so the user can retry
+    }
 
     if (editingId) {
       const idx = commands.findIndex((c) => c.id === editingId);
@@ -419,23 +481,12 @@
 
   // ── Site-wide light/dark theme ────────────────────────────────────────────
 
-  function applyTheme(isLight) {
-    document.body.classList.toggle("light", isLight);
-    const btn = document.getElementById("theme-btn");
-    if (btn) btn.textContent = isLight ? "\u263D" : "\u2600";
-  }
-
   // ── Init ──────────────────────────────────────────────────────────────────
 
   async function init() {
     await loadCommands();
 
-    applyTheme(localStorage.getItem("siteTheme") === "light");
-    document.getElementById("theme-btn").addEventListener("click", () => {
-      const nowLight = !document.body.classList.contains("light");
-      applyTheme(nowLight);
-      localStorage.setItem("siteTheme", nowLight ? "light" : "dark");
-    });
+    siteTheme.init();
 
     document.getElementById("search-input").addEventListener("input", renderList);
 

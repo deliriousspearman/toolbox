@@ -13,7 +13,7 @@
   <header>
     <h1>MD → HTML</h1>
     <p class="subtitle">Convert Markdown to styled HTML</p>
-    <a id="home-btn" href="../../" title="Back to homepage">~/</a>
+    <a id="home-btn" href="../../" title="Back to toolbox">~/</a>
     <button id="theme-btn" title="Toggle theme">&#9788;</button>
   </header>
 
@@ -96,6 +96,25 @@
           <input type="color" id="c-strong" />
         </div>
       </div>
+      <div class="preview-chip" aria-hidden="true">
+        <div class="preview-chip-label">Live preview</div>
+        <div class="preview-chip-body" id="customize-preview-body">
+          <h1>Heading 1</h1>
+          <p>Body paragraph with <strong>strong</strong> and <a href="#">a link</a>.</p>
+          <blockquote>Blockquote line</blockquote>
+          <p><code>inline code</code></p>
+        </div>
+      </div>
+      <div class="saved-presets">
+        <div class="saved-presets-row">
+          <span class="saved-presets-label">Presets:</span>
+          <div id="saved-presets-list"></div>
+        </div>
+        <div class="saved-presets-row">
+          <input type="text" id="preset-name-input" placeholder="save current as… (name)" maxlength="32" />
+          <button id="save-preset-btn" type="button">+ SAVE</button>
+        </div>
+      </div>
       <div class="modal-actions">
         <button id="customize-apply">APPLY</button>
         <button id="customize-cancel">CANCEL</button>
@@ -115,10 +134,22 @@
     </div>
   </div>
 
+  <!-- Table dimension picker -->
+  <div id="table-picker" class="modal hidden">
+    <div class="modal-box tp-box">
+      <button id="tp-close" class="close-btn" aria-label="Close">&#10005;</button>
+      <h2 class="modal-title">INSERT TABLE</h2>
+      <div class="tp-grid" id="tp-grid" role="grid" aria-label="Table size"></div>
+      <p class="tp-label" id="tp-label">hover to pick size</p>
+    </div>
+  </div>
+
   <div id="ctx-menu" class="ctx-menu hidden"></div>
   <div id="toast" class="toast"></div>
 
+  <script src="../storage.js"></script>
+  <script src="../theme.js"></script>
   <script src="app.js"></script>
-  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js").catch(function(e){console.warn("sw registration failed",e);})</script>
 </body>
 </html>

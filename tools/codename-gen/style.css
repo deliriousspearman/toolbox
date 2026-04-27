@@ -270,6 +270,16 @@ body.light #generate-btn:hover {
   color: var(--accent);
   letter-spacing: 0.06em;
   word-break: break-all;
+  /* Slow breathing phosphor glow (6s, infinite) shared with theme.css —
+     signals that the result is "live" without becoming a distraction. */
+  animation: crtPhosphor 6s ease-in-out infinite;
+}
+
+body.light #result-full {
+  /* Phosphor glow reads as dirty on paper; replace with a quiet
+     underline pulse instead. */
+  animation: none;
+  text-shadow: 0 1px 0 var(--accent-glow);
 }
 
 #result-short {
@@ -354,6 +364,7 @@ body.light #generate-btn:hover {
 
 .lookup-chip {
   display: inline-block;
+  font-family: var(--font);
   font-size: 0.82rem;
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
@@ -362,6 +373,27 @@ body.light #generate-btn:hover {
   padding: 2px 7px;
   margin: 2px;
   letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.lookup-chip:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+/* Brief accent ring + scale-up on click, triggers the copy feedback. */
+.lookup-chip.chip-flash {
+  animation: chipFlash 0.5s ease;
+}
+
+@keyframes chipFlash {
+  0%   { border-color: var(--accent); transform: scale(1); }
+  40%  { border-color: var(--accent); transform: scale(1.08);
+         background: color-mix(in srgb, var(--accent) 35%, transparent); }
+  100% { border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+         transform: scale(1);
+         background: color-mix(in srgb, var(--accent) 10%, transparent); }
 }
 
 .lookup-none {
@@ -455,4 +487,49 @@ body.light #generate-btn:hover {
   font-size: 0.8rem;
   color: var(--text-dim);
   letter-spacing: 0.2em;
+}
+
+/* Fresh-entry slide-in: the new top row briefly shows an accent
+   left-border + glow, then settles into the normal row treatment. */
+.history-row.history-flash {
+  animation: historyFlash 0.55s cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes historyFlash {
+  0%   { background: color-mix(in srgb, var(--accent) 22%, transparent);
+         box-shadow: inset 3px 0 0 0 var(--accent);
+         transform: translateX(-6px); }
+  60%  { background: color-mix(in srgb, var(--accent) 12%, transparent);
+         box-shadow: inset 3px 0 0 0 var(--accent);
+         transform: translateX(0); }
+  100% { background: transparent;
+         box-shadow: inset 0 0 0 0 transparent;
+         transform: translateX(0); }
+}
+
+/* ── Toast ───────────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(1rem);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  padding: 0.5rem 1rem;
+  font-family: var(--font);
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 20px -6px color-mix(in srgb, var(--accent) 40%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s, transform 0.22s cubic-bezier(.2, .8, .2, 1);
+  z-index: 1000;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }

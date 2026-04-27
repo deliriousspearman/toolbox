@@ -89,7 +89,8 @@ main {
 }
 
 #date-display {
-  font-size: 0.78rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
   color: var(--text-dim);
   letter-spacing: 0.12em;
 }
@@ -154,9 +155,21 @@ body.light #word-display {
   color: var(--accent);
 }
 
+/* Speech in progress: the app disables the button for the duration
+   of the utterance, so we reuse :disabled as the "speaking" state
+   and pulse a halo to show activity. */
 #speak-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+  opacity: 0.85;
+  cursor: wait;
+  color: var(--accent);
+  border-color: var(--accent);
+  animation: speakPulse 1.15s ease-out infinite;
+}
+
+@keyframes speakPulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); }
 }
 
 /* ── Navigation ──────────────────────────────────────── */
@@ -165,6 +178,23 @@ body.light #word-display {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+}
+
+/* Frame the nav with decorative << / >> sigils in the display font,
+   so the button row feels like a terminal selector rather than
+   three bare buttons.                                              */
+#nav-section::before,
+#nav-section::after {
+  content: "<<";
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--accent);
+  opacity: 0.45;
+  letter-spacing: 0.05em;
+}
+
+#nav-section::after {
+  content: ">>";
 }
 
 #nav-section button {
@@ -213,4 +243,39 @@ body.light #today-btn:hover:not(:disabled) {
 
 #word-card.fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* Loading placeholder while words.json is in flight. Dims the word
+   and definition so the empty card reads as "pending" rather than
+   broken. render() clears the class as soon as data is ready.    */
+#word-card.loading #word-display,
+#word-card.loading #definition-display {
+  color: var(--text-dim);
+  opacity: 0.55;
+}
+
+/* Word scale-in — runs on top of the card fade so the word itself
+   punches up into place. 0.92 → 1 keeps the motion tight without
+   feeling bouncy.                                                   */
+@keyframes wordEnter {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+#word-display.word-enter {
+  animation: wordEnter 0.5s cubic-bezier(.2, .8, .2, 1);
+}
+
+/* ── Speech error ────────────────────────────────────── */
+
+.speak-error {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-style: italic;
+  margin-top: 0.25rem;
+  min-height: 1em;
+}
+
+.speak-error.hidden {
+  display: none;
 }

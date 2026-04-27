@@ -306,7 +306,7 @@
   let lastOccurrences = [];
 
   function saveTZ() {
-    localStorage.setItem(TZ_LS_KEY, JSON.stringify(extraTimezones));
+    safeStorage.save(TZ_LS_KEY, JSON.stringify(extraTimezones));
   }
 
   // ── Rendering ─────────────────────────────────────────────
@@ -353,17 +353,22 @@
       grid.appendChild(head);
     }
 
-    // Data rows
+    // Data rows. Each row's leftmost cell gets a stripe class cycling
+    // accent / yellow / dim so the table reads as a vertical rhythm
+    // rather than a spreadsheet; every cell slide-reveals with a
+    // 30 ms per-row stagger for the same reason.
     const skewMs = (parseInt(document.getElementById("skew-input").value, 10) || 0) * 60 * 1000;
-    for (const date of dates) {
+    dates.forEach((date, ri) => {
       const d = skewMs ? new Date(date.getTime() + skewMs) : date;
       for (let ci = 0; ci < cols.length; ci++) {
         const cell = document.createElement("div");
         cell.className = ci === 0 ? "rt-cell utc-cell" : "rt-cell tz-cell";
+        if (ci === 0) cell.classList.add("rt-stripe-" + (ri % 3));
+        cell.style.animationDelay = (ri * 0.03) + "s";
         cell.textContent = ci === 0 ? formatUTC(d) : formatInTZ(d, cols[ci].tz);
         grid.appendChild(cell);
       }
-    }
+    });
 
     table.innerHTML = "";
     table.appendChild(grid);
@@ -378,14 +383,18 @@
     const section    = document.getElementById("results-section");
     const expr       = cronInput.value.trim();
 
+    const emptyHint = document.getElementById("cron-empty");
+
     if (!expr) {
       cronInput.classList.remove("error");
       errorEl.classList.add("hidden");
       descEl.classList.add("hidden");
       section.classList.add("hidden");
+      if (emptyHint) emptyHint.classList.remove("hidden");
       lastOccurrences = [];
       return;
     }
+    if (emptyHint) emptyHint.classList.add("hidden");
 
     let fields;
     try {
@@ -417,9 +426,16 @@
     descEl.classList.remove("hidden");
 
     if (lastOccurrences.length === 0) {
+      /* Parses fine but nothing fires inside the 4-year forward search
+         (e.g. "0 0 31 2 *"). Flag this on the description line instead
+         of leaving just a hidden table — users were missing the
+         zero-result state entirely.                                  */
       section.classList.add("hidden");
-      descEl.textContent = "no occurrences found in the next 4 years — expression may be impossible";
+      descEl.textContent = "no occurrences in the next 4 years — expression will never fire";
+      descEl.classList.remove("hidden");
+      descEl.classList.add("description-warning");
     } else {
+      descEl.classList.remove("description-warning");
       renderResults();
     }
   }
@@ -465,23 +481,12 @@
 
   // ── Theme ─────────────────────────────────────────────────
 
-  function applyTheme(isLight) {
-    document.body.classList.toggle("light", isLight);
-    const btn = document.getElementById("theme-btn");
-    if (btn) btn.textContent = isLight ? "\u263D" : "\u2600";
-  }
-
   // ── Init ──────────────────────────────────────────────────
 
   function init() {
-    applyTheme(localStorage.getItem("siteTheme") === "light");
-    document.getElementById("theme-btn").addEventListener("click", () => {
-      const nowLight = !document.body.classList.contains("light");
-      applyTheme(nowLight);
-      localStorage.setItem("siteTheme", nowLight ? "light" : "dark");
-    });
+    siteTheme.init();
 
-    extraTimezones = JSON.parse(localStorage.getItem(TZ_LS_KEY) || "[]");
+    extraTimezones = JSON.parse(safeStorage.get(TZ_LS_KEY) || "[]");
 
     populateTZSelect();
 

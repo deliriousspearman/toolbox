@@ -1,6 +1,12 @@
 /* ── Base layout ─────────────────────────────────────── */
 
 body {
+  /* Share Tech Mono reads thin at editor body sizes — for long
+     markdown sessions the original Courier stack is easier on the
+     eyes. Scoping the override to body keeps the display face
+     (VT323 on h1) unchanged.                                      */
+  --font: 'Courier New', 'Lucida Console', monospace;
+
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -109,6 +115,19 @@ header .subtitle {
 
 #copy-md-btn {
   margin-left: auto;
+  /* Divider between the file/theme group and the markdown export group */
+  padding-left: 0.7rem;
+  position: relative;
+}
+
+#copy-md-btn::before {
+  content: "";
+  position: absolute;
+  left: -0.15rem;
+  top: 20%;
+  bottom: 20%;
+  width: 1px;
+  background: var(--border);
 }
 
 .toolbar label {
@@ -167,11 +186,18 @@ main {
   overflow: hidden;
   min-width: 0;
   border-right: 1px solid var(--border);
+  position: relative;
 }
 
 .pane:last-child {
   border-right: none;
 }
+
+/* 3px accent edge on the outside of each pane so the user can tell
+   at a glance which side is the editable source (left) and which is
+   the read-only output (right).                                      */
+#pane-md  { box-shadow: inset 3px 0 0 0 var(--accent); }
+#pane-html { box-shadow: inset -3px 0 0 0 var(--accent); }
 
 .pane-label {
   font-size: 0.68rem;
@@ -185,6 +211,10 @@ main {
   align-items: center;
   justify-content: space-between;
 }
+
+/* Tint the label of the editable pane so it reads as the source-of-truth
+   while the output pane's label stays dimmed/secondary.                 */
+#pane-md  > .pane-label { color: var(--accent); }
 
 .expand-btn {
   background: transparent;
@@ -236,6 +266,10 @@ main {
   align-items: center;
   justify-content: center;
   z-index: 100;
+}
+
+body.light .modal {
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .modal.hidden {
@@ -477,4 +511,221 @@ body.light .ctx-item:hover {
 .ctx-submenu.flip-v {
   top: auto;
   bottom: -4px;
+}
+
+/* ── Customize modal: live preview chip ──────────────── */
+/* Renders a small markdown fragment using CSS custom properties set
+   by the colour pickers, so the user can see contrast before apply. */
+
+.preview-chip {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.preview-chip-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 0.3rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.preview-chip-body {
+  padding: 0.95rem 1rem;
+  background: var(--preview-bg, #fff);
+  color: var(--preview-text, #111);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  transition: background 0.1s, color 0.1s;
+}
+
+.preview-chip-body > *:first-child { margin-top: 0; }
+.preview-chip-body > *:last-child  { margin-bottom: 0; }
+
+.preview-chip-body h1 {
+  font-size: 1.1rem;
+  margin: 0 0 0.4em;
+  color: var(--preview-h1, inherit);
+}
+
+.preview-chip-body p {
+  margin: 0.4em 0;
+}
+
+.preview-chip-body strong {
+  color: var(--preview-strong, inherit);
+}
+
+.preview-chip-body a {
+  color: var(--preview-link, inherit);
+  text-decoration: underline;
+}
+
+.preview-chip-body blockquote {
+  margin: 0.5em 0;
+  padding-left: 0.75em;
+  border-left: 3px solid var(--preview-bq, #888);
+  color: var(--preview-bq, inherit);
+  font-style: italic;
+}
+
+.preview-chip-body code {
+  background: var(--preview-code-bg, #f4f4f4);
+  color: var(--preview-code-text, inherit);
+  padding: 0.08em 0.4em;
+  border-radius: 2px;
+  font-family: var(--font);
+  font-size: 0.82em;
+}
+
+/* ── Customize modal: saved presets ──────────────────── */
+
+.saved-presets {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.saved-presets-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.saved-presets-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+#saved-presets-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.saved-presets-none {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.saved-preset-chip {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.saved-preset-chip .preset-load,
+.saved-preset-chip .preset-delete {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.saved-preset-chip .preset-load:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.saved-preset-chip .preset-delete {
+  border-left: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 3px 8px;
+}
+
+.saved-preset-chip .preset-delete:hover {
+  background: #4a1818;
+  color: #ffd4d4;
+}
+
+body.light .saved-preset-chip .preset-delete:hover {
+  background: #fdecec;
+  color: #6b1f1f;
+}
+
+#preset-name-input {
+  flex: 1;
+  min-width: 10rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  padding: 5px 9px;
+}
+
+#save-preset-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+#save-preset-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Table dimension picker ──────────────────────────── */
+
+.tp-box {
+  min-width: 0;
+  padding: 1.5rem 1.75rem;
+}
+
+.tp-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 18px);
+  grid-auto-rows: 18px;
+  gap: 3px;
+  margin: 0.9rem auto 0.6rem;
+  width: max-content;
+  /* Idle cells read as a dim matrix; hovered cells light up below.  */
+  cursor: pointer;
+}
+
+.tp-cell {
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.06s, border-color 0.06s;
+}
+
+.tp-cell.on {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  border-color: var(--accent);
+}
+
+.tp-label {
+  text-align: center;
+  font-family: var(--font);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  min-height: 1.2em;
 }

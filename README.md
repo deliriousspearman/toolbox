@@ -1,4 +1,4 @@
-# Toolbox
+# toolbox
 
 A collection of browser-based tools. No build system, no package manager, no client-side dependencies — plain HTML, CSS, and vanilla JavaScript, served directly by Apache2.
 
@@ -24,55 +24,55 @@ A collection of browser-based tools. No build system, no package manager, no cli
 ### 1. Clone the repository
 
 ```bash
-git clone <project> /var/www/homepage
+git clone <project> /var/www/toolbox
 ```
 
-Replace `/var/www/homepage` with whatever document root you prefer.
+Replace `/var/www/toolbox` with whatever document root you prefer.
 
 ### 2. Set file permissions
 
 The shell-explain tool stores commands in a flat JSON file that PHP writes to at runtime:
 
 ```bash
-sudo chown www-data:www-data /var/www/homepage/tools/shell-explain/commands.json
+sudo chown www-data:www-data /var/www/toolbox/tools/shell-explain/commands.json
 # or, if you prefer to keep your own user as owner:
-sudo chmod 664 /var/www/homepage/tools/shell-explain/commands.json
-sudo chown :<your-apache-group> /var/www/homepage/tools/shell-explain/commands.json
+sudo chmod 664 /var/www/toolbox/tools/shell-explain/commands.json
+sudo chown :<your-apache-group> /var/www/toolbox/tools/shell-explain/commands.json
 ```
 
 The rest of the files are read-only from Apache's perspective and need no special permissions.
 
 ### 3. Configure a virtual host
 
-Create `/etc/apache2/sites-available/homepage.conf`:
+Create `/etc/apache2/sites-available/toolbox.conf`:
 
 ```apache
 <VirtualHost *:80>
     ServerName yourdomain.com
-    DocumentRoot /var/www/homepage
+    DocumentRoot /var/www/toolbox
 
-    <Directory /var/www/homepage>
+    <Directory /var/www/toolbox>
         Options -Indexes
         AllowOverride None
         Require all granted
     </Directory>
 
     # Enable PHP for the shell-explain API endpoint only
-    <Directory /var/www/homepage/tools/shell-explain>
+    <Directory /var/www/toolbox/tools/shell-explain>
         Options -Indexes
         AllowOverride None
         Require all granted
     </Directory>
 
-    ErrorLog ${APACHE_LOG_DIR}/homepage_error.log
-    CustomLog ${APACHE_LOG_DIR}/homepage_access.log combined
+    ErrorLog ${APACHE_LOG_DIR}/toolbox_error.log
+    CustomLog ${APACHE_LOG_DIR}/toolbox_access.log combined
 </VirtualHost>
 ```
 
 Enable the site and reload Apache:
 
 ```bash
-sudo a2ensite homepage.conf
+sudo a2ensite toolbox.conf
 sudo systemctl reload apache2
 ```
 
@@ -121,9 +121,9 @@ sudo a2dissite 000-default.conf
 sudo systemctl reload apache2
 ```
 
-Visiting by IP will now hit the homepage config since it is the only enabled site.
+Visiting by IP will now hit the toolbox config since it is the only enabled site.
 
-Alternatively, if you need the default site to stay enabled, add your server's IP as a `ServerAlias` in `homepage.conf`:
+Alternatively, if you need the default site to stay enabled, add your server's IP as a `ServerAlias` in `toolbox.conf`:
 
 ```apache
 ServerName yourdomain.com
@@ -145,7 +145,7 @@ This shows all enabled virtual hosts, which one is the default, and which `Serve
 ## Project structure
 
 ```
-homepage/
+toolbox/
 ├── index.html               # Tool index / landing page
 ├── style.css                # Landing page styles
 └── tools/

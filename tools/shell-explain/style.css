@@ -202,13 +202,36 @@ main {
 .cmd-card {
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 1rem 1.25rem;
+  padding: 1rem 1.25rem 1rem 1.35rem;
   position: relative;
+  overflow: hidden;
   transition: border-color 0.15s;
 }
 
-.cmd-card:hover {
+/* Per-card left accent stripe. --card-stripe is set by JS based on a
+   hash of the card's first category tag, so cards from the same
+   category share a colour — handy visual grouping without extra
+   config. Falls back to --accent for cards without categories.      */
+.cmd-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--card-stripe, var(--accent));
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.cmd-card:hover,
+.cmd-card:focus-within {
   border-color: var(--text-dim);
+}
+
+.cmd-card:hover::before,
+.cmd-card:focus-within::before {
+  opacity: 1;
 }
 
 /* command string line */
@@ -256,13 +279,54 @@ main {
   color: var(--accent);
 }
 
-/* parts list */
+/* parts list — now nested inside .cmd-parts-wrap which also carries
+   a collapsible header button (.parts-toggle). Border moves up to
+   the toggle so the boundary stays visible whether open or closed. */
+.cmd-parts-wrap {
+  margin-top: 0.2rem;
+}
+
+.parts-toggle {
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border);
+  width: 100%;
+  padding: 0.5rem 0 0.45rem;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: color 0.15s;
+}
+
+.parts-toggle:hover {
+  color: var(--text);
+}
+
+.parts-arrow {
+  display: inline-block;
+  transition: transform 0.18s cubic-bezier(.2, .8, .2, 1);
+  color: var(--accent);
+}
+
+.cmd-card.parts-collapsed .parts-arrow {
+  transform: rotate(-90deg);
+}
+
+.cmd-card.parts-collapsed .cmd-parts {
+  display: none;
+}
+
 .cmd-parts {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  border-top: 1px solid var(--border);
-  padding-top: 0.7rem;
+  padding-top: 0.2rem;
 }
 
 .part-row {
@@ -293,13 +357,26 @@ main {
   line-height: 1.45;
 }
 
-/* edit / delete buttons (custom cards only) */
+/* edit / delete buttons — hidden at rest, slide in when the card
+   is hovered or keyboard-focused. Removes the permanent top-right
+   chrome, keeping the default card view cleaner.                  */
 .card-controls {
   position: absolute;
   top: 0.65rem;
   right: 0.75rem;
   display: flex;
   gap: 0.35rem;
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity 0.18s, transform 0.18s cubic-bezier(.2, .8, .2, 1);
+  pointer-events: none;
+}
+
+.cmd-card:hover .card-controls,
+.cmd-card:focus-within .card-controls {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
 }
 
 .card-controls button {
@@ -342,6 +419,10 @@ main {
   align-items: center;
   justify-content: center;
   z-index: 100;
+}
+
+body.light .modal {
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .modal.hidden {
@@ -601,4 +682,27 @@ main {
 .modal-actions button:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* ── Toast ───────────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: 3px;
+  display: none;
+  z-index: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.toast.visible {
+  display: block;
 }

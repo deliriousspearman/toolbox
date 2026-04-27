@@ -26,7 +26,7 @@
         <label for="char-limit">Max codename length</label>
         <input id="char-limit" type="number" min="2" max="30" placeholder="&#8734;" autocomplete="off" />
       </div>
-      <button id="generate-btn">GENERATE</button>
+      <button id="generate-btn" disabled>LOADING…</button>
       <p id="gen-error" class="hidden"></p>
       <div id="result" class="hidden">
         <div id="result-full"></div>
@@ -39,7 +39,7 @@
       <div id="lookup-input-row">
         <input id="lookup-input" type="text" maxlength="4"
                placeholder="CHNU" autocomplete="off" spellcheck="false" />
-        <button id="lookup-btn">DECODE</button>
+        <button id="lookup-btn" disabled>LOADING…</button>
       </div>
       <p id="lookup-error" class="hidden"></p>
       <div id="lookup-results" class="hidden">
@@ -64,7 +64,11 @@
     </section>
   </main>
 
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="../storage.js"></script>
+  <script src="../theme.js"></script>
   <script src="app.js"></script>
-  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js").catch(function(e){console.warn("sw registration failed",e);})</script>
 </body>
 </html>

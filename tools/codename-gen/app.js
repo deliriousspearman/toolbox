@@ -7,11 +7,42 @@
   let allCategories  = [];
   let activeCategories = new Set();
   let history        = [];
+  let pendingFlash   = false;   // true while a fresh entry is waiting to be highlighted
+  let toastTimer     = null;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   function pick(pool) {
     return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add("visible");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("visible"), 1800);
+  }
+
+  /* Copy text to the clipboard. Uses the async Clipboard API when
+     available and falls back to the hidden-textarea execCommand path
+     for older browsers / file:// contexts.                           */
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve) => {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity  = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch (e) { console.warn("copyText fallback failed", e); }
+      ta.remove();
+      resolve();
+    });
   }
 
   // ── Generate ──────────────────────────────────────────────────────────────
@@ -53,8 +84,9 @@
     const entry = { full, short };
 
     history.unshift(entry);
-    localStorage.setItem(LS_KEY, JSON.stringify(history));
+    safeStorage.save(LS_KEY, JSON.stringify(history));
 
+    pendingFlash = true;
     renderResult(entry);
     renderHistory();
   }
@@ -104,9 +136,10 @@
     list.innerHTML = "";
 
     const frag = document.createDocumentFragment();
-    history.forEach((entry) => {
+    history.forEach((entry, idx) => {
       const row = document.createElement("div");
       row.className = "history-row";
+      if (idx === 0 && pendingFlash) row.classList.add("history-flash");
 
       const full = document.createElement("span");
       full.className = "history-full";
@@ -120,13 +153,14 @@
       frag.appendChild(row);
     });
     list.appendChild(frag);
+    pendingFlash = false;
   }
 
   // ── Clear ─────────────────────────────────────────────────────────────────
 
   function clearHistory() {
     history = [];
-    localStorage.removeItem(LS_KEY);
+    safeStorage.remove(LS_KEY);
     document.getElementById("result").classList.add("hidden");
     renderHistory();
   }
@@ -169,9 +203,20 @@
         return;
       }
       matches.forEach((word) => {
-        const chip = document.createElement("span");
+        const chip = document.createElement("button");
         chip.className = "lookup-chip";
+        chip.type = "button";
         chip.textContent = word;
+        chip.title = "Click to copy";
+        chip.addEventListener("click", () => {
+          copyText(word).then(() => {
+            chip.classList.remove("chip-flash");
+            /* Force reflow so the keyframe restarts on repeated clicks. */
+            void chip.offsetWidth;
+            chip.classList.add("chip-flash");
+            showToast('copied "' + word + '"');
+          });
+        });
         container.appendChild(chip);
       });
     });
@@ -180,12 +225,6 @@
   }
 
   // ── Theme ─────────────────────────────────────────────────────────────────
-
-  function applyTheme(isLight) {
-    document.body.classList.toggle("light", isLight);
-    const btn = document.getElementById("theme-btn");
-    if (btn) btn.textContent = isLight ? "\u263D" : "\u2600";
-  }
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
@@ -197,21 +236,26 @@
       for (const [category, words] of Object.entries(grouped)) {
         for (const word of words) WORDS.push({ word, category });
       }
-    } catch {
+    } catch (e) {
+      console.warn("codename-gen: wordlist.json load failed", e);
       WORDS = [];
     }
 
     allCategories = [...new Set(WORDS.map((w) => w.category))].sort();
     activeCategories = new Set(allCategories);
 
-    history = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+    /* Wordlist loaded — restore the buttons from their "LOADING…"
+       placeholder state set in the HTML.                           */
+    const genBtn = document.getElementById("generate-btn");
+    const lookupBtn = document.getElementById("lookup-btn");
+    genBtn.disabled = false;
+    genBtn.textContent = "GENERATE";
+    lookupBtn.disabled = false;
+    lookupBtn.textContent = "DECODE";
 
-    applyTheme(localStorage.getItem("siteTheme") === "light");
-    document.getElementById("theme-btn").addEventListener("click", () => {
-      const nowLight = !document.body.classList.contains("light");
-      applyTheme(nowLight);
-      localStorage.setItem("siteTheme", nowLight ? "light" : "dark");
-    });
+    history = JSON.parse(safeStorage.get(LS_KEY) || "[]");
+
+    siteTheme.init();
 
     document.getElementById("generate-btn").addEventListener("click", generate);
     document.getElementById("clear-btn").addEventListener("click", clearHistory);

@@ -20,10 +20,11 @@
       <span id="date-display"></span>
     </section>
 
-    <section id="word-card">
-      <div id="word-display"></div>
+    <section id="word-card" class="loading">
+      <div id="word-display">…</div>
       <button id="speak-btn" title="Hear pronunciation">&#9834;</button>
-      <div id="definition-display"></div>
+      <div id="speak-error" class="speak-error hidden" role="status"></div>
+      <div id="definition-display">fetching today's word</div>
     </section>
 
     <section id="nav-section">
@@ -33,7 +34,9 @@
     </section>
   </main>
 
+  <script src="../storage.js"></script>
+  <script src="../theme.js"></script>
   <script src="app.js"></script>
-  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js").catch(function(e){console.warn("sw registration failed",e);})</script>
 </body>
 </html>

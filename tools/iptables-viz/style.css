@@ -1,0 +1,580 @@
+/* ── Base layout ─────────────────────────────────────── */
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────── */
+
+header {
+  position: relative;
+  text-align: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+header h1 {
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+header .subtitle {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+  letter-spacing: 0.05em;
+}
+
+#home-btn, #theme-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  padding: 5px 9px;
+  cursor: pointer;
+  line-height: 1;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+#home-btn { left: 14px; }
+#theme-btn { right: 14px; }
+
+#home-btn:hover, #theme-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Toolbar ─────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 0.45rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.toolbar-spacer { flex: 1; }
+
+.toolbar button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  line-height: 1.4;
+}
+
+.toolbar button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#visualize-btn {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.stats {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+
+/* ── Main / layout ──────────────────────────────────── */
+
+main {
+  flex: 1;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr auto;
+  min-height: 0;
+  position: relative;
+}
+
+.input-section {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  min-height: 0;
+  flex-shrink: 0;
+}
+
+.input-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+  transition: flex 0.2s;
+}
+
+.input-pane:last-child {
+  border-right: none;
+}
+
+.input-pane.collapsed textarea {
+  display: none;
+}
+
+.input-pane.collapsed {
+  flex: 0 0 auto;
+}
+
+.pane-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pane-hint {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-dim);
+  opacity: 0.65;
+  margin-left: 0.4rem;
+  font-size: 0.68rem;
+}
+
+.collapse-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.collapse-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.input-pane textarea {
+  flex: 1;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 0.5rem 0.75rem;
+  line-height: 1.55;
+  min-height: 140px;
+  max-height: 260px;
+}
+
+/* ── Viz section ─────────────────────────────────────── */
+
+.viz-section {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.legend {
+  display: flex;
+  gap: 1rem;
+  padding: 0.4rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ── Chain-policy bar ────────────────────────────────── */
+/* One pill per built-in chain with its default policy, coloured by
+   the shared target palette (see colorFor() in app.js).           */
+
+.policy-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.policy-bar.hidden { display: none; }
+
+.policy-bar-label {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-right: 0.4rem;
+}
+
+.policy-pill {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 8px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.policy-pill .policy-value {
+  margin-left: 0.15em;
+  font-weight: 600;
+}
+
+.viz-wrap {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: var(--bg);
+}
+
+#viz {
+  display: block;
+  min-width: 100%;
+}
+
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.empty-state.hidden {
+  display: none;
+}
+
+.empty-state strong {
+  color: var(--accent);
+}
+
+/* ── SVG element styles ─────────────────────────────── */
+
+.node-rect {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.node-rect.any {
+  stroke-dasharray: 4 3;
+  stroke: var(--text-dim);
+}
+
+.node-text {
+  fill: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  dominant-baseline: middle;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.chain-label {
+  fill: var(--text-dim);
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-anchor: middle;
+}
+
+.edge {
+  fill: none;
+  stroke-width: 1.6;
+  cursor: pointer;
+  transition: stroke-width 0.1s, opacity 0.1s;
+  opacity: 0.75;
+}
+
+.edge:hover {
+  stroke-width: 3;
+  opacity: 1;
+}
+
+.edge.selected {
+  stroke-width: 3;
+  opacity: 1;
+}
+
+.col-label {
+  fill: var(--text-dim);
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-anchor: middle;
+}
+
+/* ── Details panel ──────────────────────────────────── */
+
+.details-panel {
+  grid-column: 2;
+  grid-row: 2;
+  width: 340px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.details-panel.hidden {
+  display: none;
+}
+
+.details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.details-title {
+  font-size: 0.8rem;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.close-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  padding: 2px 7px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.details-body {
+  padding: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.details-field {
+  margin-bottom: 1rem;
+}
+
+.details-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+
+.details-value {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.details-raw, .details-cmd {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.details-cmd {
+  color: var(--accent);
+}
+
+.copy-btn {
+  margin-top: 0.4rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Tooltip ─────────────────────────────────────────── */
+
+.tooltip {
+  position: fixed;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.72rem;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 400;
+  max-width: 340px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.tooltip.hidden {
+  display: none;
+}
+
+.tooltip .tt-target {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.tooltip .tt-meta {
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  margin-top: 0.15rem;
+}
+
+/* ── Toast ───────────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: 3px;
+  display: none;
+  z-index: 500;
+  white-space: nowrap;
+}
+
+.toast.visible {
+  display: block;
+}
+
+/* ── Edge draw-in on render ──────────────────────────── */
+/* Each path has pathLength="1" so dashoffset 1-unit === full length.
+   Animation draws the stroke from hidden (offset 1) to visible (offset 0).
+   Per-edge animation-delay is set inline by app.js so edges stream in
+   rather than popping at once.                                         */
+
+.edge {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: edgeDraw 0.55s cubic-bezier(.2, .8, .2, 1) forwards;
+}
+
+@keyframes edgeDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ── Node pulse on edge selection ────────────────────── */
+
+.node-rect.pulse-once {
+  animation: nodePulse 0.6s cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes nodePulse {
+  0%   { stroke-width: 1;   stroke: var(--border); filter: none; }
+  40%  { stroke-width: 2.5; stroke: var(--accent);
+         filter: drop-shadow(0 0 6px var(--accent)); }
+  100% { stroke-width: 1;   stroke: var(--border); filter: none; }
+}
+
+/* ── Legend hover → focus one target category ────────── */
+
+.legend-item {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.legend-item:hover {
+  color: var(--text);
+}
+
+/* When the viz-wrap has data-focus=X, every edge fades out, then the
+   matching-target edges fade back in at full opacity. NAT and OTHER
+   are multi-target, hence the selector list below. */
+.viz-wrap[data-focus] .edge {
+  opacity: 0.12;
+  transition: opacity 0.15s;
+}
+
+.viz-wrap[data-focus="ACCEPT"] .edge[data-target="ACCEPT"],
+.viz-wrap[data-focus="DROP"]   .edge[data-target="DROP"],
+.viz-wrap[data-focus="REJECT"] .edge[data-target="REJECT"],
+.viz-wrap[data-focus="LOG"]    .edge[data-target="LOG"],
+.viz-wrap[data-focus="NAT"]    .edge[data-target="DNAT"],
+.viz-wrap[data-focus="NAT"]    .edge[data-target="SNAT"],
+.viz-wrap[data-focus="NAT"]    .edge[data-target="MASQUERADE"],
+.viz-wrap[data-focus="NAT"]    .edge[data-target="REDIRECT"],
+.viz-wrap[data-focus="OTHER"]  .edge[data-target="RETURN"] {
+  opacity: 1;
+}

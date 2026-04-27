@@ -13,7 +13,7 @@
   <header>
     <h1>CRON TIME</h1>
     <p class="subtitle">Parse and preview cron schedules</p>
-    <a id="home-btn" href="../../" title="Back to homepage">~/</a>
+    <a id="home-btn" href="../../" title="Back to toolbox">~/</a>
     <button id="theme-btn" title="Toggle theme">&#9788;</button>
   </header>
 
@@ -54,6 +54,11 @@
 
     <div id="description" class="description hidden"></div>
 
+    <div id="cron-empty" class="empty-hint">
+      <span class="empty-sigil" aria-hidden="true">&#9656;</span>
+      <span>paste a cron expression above to see its next run times</span>
+    </div>
+
     <div id="results-section" class="results-section hidden">
       <div class="results-header">
         <span class="results-label">next occurrences</span>
@@ -92,7 +97,9 @@
 
   </main>
 
+  <script src="../storage.js"></script>
+  <script src="../theme.js"></script>
   <script src="app.js"></script>
-  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js").catch(function(e){console.warn("sw registration failed",e);})</script>
 </body>
 </html>

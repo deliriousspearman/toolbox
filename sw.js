@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v8";
 const CACHE_NAME = "tools-" + CACHE_VERSION;
 
 const PRECACHE_URLS = [
@@ -8,6 +8,10 @@ const PRECACHE_URLS = [
   "/style.css",
   "/images/favicon.svg",
   "/404.html",
+  "/tools/storage.js",
+  "/tools/theme.js",
+  "/fonts/share-tech-mono-400.woff2",
+  "/fonts/vt323-400.woff2",
   "/tools/process-wordle/",
   "/tools/process-wordle/index.html",
   "/tools/process-wordle/style.css",
@@ -35,12 +39,39 @@ const PRECACHE_URLS = [
   "/tools/word-of-the-day/style.css",
   "/tools/word-of-the-day/app.js",
   "/tools/word-of-the-day/words.json",
+  "/tools/iptables-viz/",
+  "/tools/iptables-viz/index.html",
+  "/tools/iptables-viz/style.css",
+  "/tools/iptables-viz/app.js",
+  "/tools/forensics/",
+  "/tools/forensics/index.html",
+  "/tools/forensics/style.css",
+  "/tools/forensics/app.js",
 ];
 
 // ── Install: precache all static assets ────────────────
+/* cache.addAll() rejects the whole batch if any URL 404s, which would
+   stop the SW from ever activating after a typo in PRECACHE_URLS.
+   Use allSettled + individual cache.put() so a missing file is logged
+   but doesn't brick the install.                                      */
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(
+        PRECACHE_URLS.map((url) =>
+          fetch(url, { cache: "reload" }).then((res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return cache.put(url, res);
+          })
+        )
+      ).then((results) => {
+        results.forEach((r, i) => {
+          if (r.status === "rejected") {
+            console.warn("sw precache failed for", PRECACHE_URLS[i], r.reason);
+          }
+        });
+      })
+    )
   );
   self.skipWaiting();
 });
@@ -77,7 +108,7 @@ self.addEventListener("fetch", (event) => {
                 cache.put(event.request, response);
               });
             }
-          }).catch(() => {})
+          }).catch((err) => console.warn("sw revalidate failed", url.pathname, err))
         );
         return cached;
       }
