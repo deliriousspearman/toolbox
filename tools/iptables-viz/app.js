@@ -155,12 +155,13 @@
   // Columns: sources on left, destinations on right. Chain labels between.
 
   function computeLayout(rules, width) {
-    const NODE_W = 150;
-    const NODE_H = 34;
-    const V_GAP = 14;
-    const PADDING_TOP = 50;
+    const NODE_W = 240;
+    const NODE_H = 44;
+    const V_GAP = 28;
+    const PADDING_TOP = 58;
     const LEFT_X = 90;
-    const RIGHT_X = Math.max(width - NODE_W - 90, LEFT_X + 280);
+    const MIN_ARC_SPAN = 200; // min horizontal room between the two columns for arcs to read
+    const RIGHT_X = Math.max(width - NODE_W - 90, LEFT_X + NODE_W + MIN_ARC_SPAN);
 
     // Collect unique sources and destinations in insertion order
     const srcOrder = [];
@@ -320,7 +321,7 @@
     // Column labels
     const leftX = layout.nodes.find((n) => n.side === "left")?.x || 90;
     const rightX = layout.nodes.find((n) => n.side === "right")?.x || width - 90;
-    const nodeW = 150;
+    const nodeW = 240;
     const src = svgEl("text", {
       x: leftX + nodeW / 2,
       y: 22,

@@ -17,6 +17,9 @@ Toolbar actions: **Upload** a `.md` file, select a **Theme**, open the **Customi
 |-------|-------------|
 | Dracula | Dark purple/green palette |
 | Nord | Dark arctic blue palette |
+| Solarized Dark | Dark teal/blue palette |
+| Monokai | Dark high-contrast editor palette |
+| GitHub | Light palette matching GitHub-rendered Markdown |
 | Custom | User-defined colours (see below) |
 
 Switching themes instantly re-converts the Markdown with the new colour set.
@@ -54,5 +57,5 @@ Click **Apply** to save and switch to the Custom theme.
 
 | File | Purpose |
 |------|---------|
-| `app.js` | Single IIFE; `THEMES` constant defines Dracula and Nord as CSS-property objects; `parseBlocks()` is the block-level state machine; `inlineToHtml()` applies inline transforms with inline-code protection; `parseMd()` wraps output in a full HTML document |
+| `app.js` | Single IIFE; `THEMES` constant defines Dracula, Nord, Solarized Dark, Monokai, and GitHub as CSS-property objects; `parseBlocks()` is the block-level state machine; `inlineToHtml()` applies inline transforms with inline-code protection; `parseMd()` wraps output in a full HTML document |
 | `style.css` | Tool UI styles only — not applied to the converted output |

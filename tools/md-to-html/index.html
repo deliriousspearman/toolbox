@@ -18,20 +18,23 @@
   </header>
 
   <div class="toolbar">
-    <div class="toolbar-left">
+    <div class="toolbar-left" id="toolbar-left">
       <button id="upload-btn">&#8593; Upload</button>
       <input type="file" id="file-input" accept=".md,.txt,.markdown" hidden />
       <label for="theme-select">Theme:</label>
       <select id="theme-select">
         <option value="dracula">Dracula</option>
         <option value="nord">Nord</option>
+        <option value="solarized">Solarized Dark</option>
+        <option value="monokai">Monokai</option>
+        <option value="github">GitHub</option>
         <option value="custom">Custom</option>
       </select>
       <button id="customize-btn">&#9998; Customize</button>
       <button id="copy-md-btn">&#8984; Copy</button>
       <button id="download-md-btn">&#8595; MD</button>
     </div>
-    <div class="toolbar-right">
+    <div class="toolbar-right" id="toolbar-right">
       <button id="copy-btn">&#8984; Copy</button>
       <button id="download-btn">&#8595; HTML</button>
     </div>
@@ -40,12 +43,33 @@
   <main>
     <div class="editor-pane">
       <div class="pane" id="pane-md">
-        <div class="pane-label">markdown <button class="expand-btn" id="expand-md" title="Expand markdown">&#x25A1;</button></div>
+        <div class="pane-label">
+          markdown
+          <span class="pane-label-controls">
+            <span id="md-stats" class="pane-stats"></span>
+            <button class="expand-btn" id="expand-md" title="Expand markdown">&#x25A1;</button>
+          </span>
+        </div>
         <textarea id="md-input" spellcheck="false" placeholder="Type or paste Markdown here…"></textarea>
       </div>
-      <div class="pane" id="pane-html">
-        <div class="pane-label">html output <button class="expand-btn" id="expand-html" title="Expand HTML output">&#x25A1;</button></div>
-        <textarea id="html-output" readonly spellcheck="false" placeholder="HTML will appear here…"></textarea>
+      <div class="pane-resizer" id="pane-resizer" role="separator" aria-orientation="vertical" aria-label="Resize panes"></div>
+      <div class="pane view-raw" id="pane-html">
+        <div class="pane-label">
+          html output
+          <span class="pane-label-controls">
+            <select id="html-view-mode" title="Output view">
+              <option value="raw">Code</option>
+              <option value="preview">Preview</option>
+              <option value="both">Both</option>
+            </select>
+            <button class="expand-btn" id="expand-html" title="Expand HTML output">&#x25A1;</button>
+          </span>
+        </div>
+        <div class="html-output-wrap">
+          <iframe id="html-preview" class="html-preview" title="HTML preview" sandbox=""></iframe>
+          <div class="output-resizer" id="output-resizer" role="separator" aria-orientation="horizontal" aria-label="Resize preview and code"></div>
+          <textarea id="html-output" readonly spellcheck="false" placeholder="HTML will appear here…"></textarea>
+        </div>
       </div>
     </div>
   </main>

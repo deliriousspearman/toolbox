@@ -44,8 +44,10 @@ body.light .key.absent {
 }
 
 /* ── Theme + Settings buttons ────────────────────────── */
+/* #theme-btn is fixed to the viewport's top-right corner so it's
+   always the outermost button, independent of header height — the
+   others stay anchored within the header and shift left to clear it. */
 
-#theme-btn,
 #settings-btn,
 #stats-btn {
   position: absolute;
@@ -63,9 +65,27 @@ body.light .key.absent {
   transition: border-color 0.2s, color 0.2s;
 }
 
-#stats-btn   { right: 96px; }
-#theme-btn   { right: 55px; }
-#settings-btn { right: 14px; }
+#stats-btn    { right: 96px; }
+#settings-btn { right: 55px; }
+
+#theme-btn {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  padding: 5px 9px;
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color 0.2s, color 0.2s;
+}
 
 #theme-btn:hover,
 #settings-btn:hover,
@@ -206,8 +226,6 @@ header h1::before {
   text-transform: uppercase;
   user-select: none;
   transition: border-color 0.1s;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
 }
 
 .cell.empty   { border-color: var(--border); }

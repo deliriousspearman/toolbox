@@ -35,9 +35,6 @@ header .subtitle {
 }
 
 #home-btn, #theme-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 3px;
@@ -51,8 +48,21 @@ header .subtitle {
   transition: border-color 0.2s, color 0.2s;
 }
 
-#home-btn { left: 14px; }
-#theme-btn { right: 14px; }
+#home-btn {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#theme-btn {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
 #home-btn:hover, #theme-btn:hover {
   border-color: var(--accent);

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v19";
 const CACHE_NAME = "tools-" + CACHE_VERSION;
 
 const PRECACHE_URLS = [
@@ -47,6 +47,10 @@ const PRECACHE_URLS = [
   "/tools/forensics/index.html",
   "/tools/forensics/style.css",
   "/tools/forensics/app.js",
+  "/tools/terminal-builder/",
+  "/tools/terminal-builder/index.html",
+  "/tools/terminal-builder/style.css",
+  "/tools/terminal-builder/app.js",
 ];
 
 // ── Install: precache all static assets ────────────────

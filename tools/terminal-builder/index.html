@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terminal Builder</title>
+  <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg" />
+  <link rel="stylesheet" href="../../theme.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>TERMINAL BUILDER</h1>
+    <p class="subtitle">Turn code &amp; commands into a copy-paste terminal window</p>
+    <a id="home-btn" href="../../" title="Back to toolbox">~/</a>
+    <button id="theme-btn" title="Toggle theme">&#9788;</button>
+  </header>
+
+  <main>
+
+    <section class="settings-section">
+      <div class="section-header">
+        <div class="section-label">1. settings</div>
+        <button id="reset-btn">reset</button>
+      </div>
+
+      <div class="options-row">
+        <div class="field-wrap title-wrap">
+          <label for="tb-title">window title</label>
+          <input id="tb-title" type="text" spellcheck="false" autocomplete="off"
+            placeholder="user@host: ~/project" />
+        </div>
+
+        <div class="field-wrap lang-wrap">
+          <label for="tb-lang">language</label>
+          <select id="tb-lang">
+            <option value="plain">plain text</option>
+            <option value="terminal">terminal</option>
+            <option value="sh">shell / bash</option>
+            <option value="js">javascript</option>
+            <option value="py">python</option>
+            <option value="html">html</option>
+            <option value="css">css</option>
+            <option value="json">json</option>
+            <option value="sql">sql</option>
+            <option value="rust">rust</option>
+            <option value="go">go</option>
+          </select>
+        </div>
+
+        <div class="field-wrap bg-wrap">
+          <label for="tb-bg-preset">background</label>
+          <div class="bg-controls">
+            <select id="tb-bg-preset">
+              <option value="default">default (grey)</option>
+              <option value="defender">defender (blue)</option>
+              <option value="attacker">attacker (red)</option>
+              <option value="custom">custom</option>
+            </select>
+            <input id="tb-bgcolor" type="color" value="#1a1a1a" />
+          </div>
+        </div>
+
+        <div class="field-wrap fontsize-wrap">
+          <label for="tb-fontsize">font size</label>
+          <div class="fontsize-controls">
+            <input id="tb-fontsize" type="number" min="10" max="28" step="1" value="13" />
+            <span class="unit">px</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-wrap code-wrap">
+        <label for="tb-code">terminal text</label>
+        <textarea id="tb-code" spellcheck="false" autocomplete="off"
+          placeholder="$ paste a command or code block here"></textarea>
+      </div>
+    </section>
+
+    <section class="preview-section">
+      <div class="section-label">2. preview</div>
+      <div id="preview-mount" class="preview-mount"></div>
+    </section>
+
+    <section class="output-section">
+      <div class="section-header">
+        <div class="section-label">3. code output</div>
+        <div class="section-actions">
+          <label class="format-toggle">
+            <input id="tb-format-toggle" type="checkbox" />
+            format
+          </label>
+          <button id="copy-btn">copy html</button>
+        </div>
+      </div>
+      <textarea id="html-output" readonly spellcheck="false"></textarea>
+    </section>
+
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="../storage.js"></script>
+  <script src="../theme.js"></script>
+  <script src="app.js"></script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js").catch(function(e){console.warn("sw registration failed",e);})</script>
+</body>
+</html>

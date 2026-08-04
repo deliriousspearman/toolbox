@@ -67,6 +67,84 @@
       img:        { maxWidth: "100%", height: "auto" },
       syntax:     { keyword: "#81a1c1", string: "#a3be8c", comment: "#616e88", number: "#b48ead" },
     },
+    solarized: {
+      body:       { background: "#002b36", color: "#839496", fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: "1.7", padding: "2rem 3rem", maxWidth: "860px", margin: "0 auto" },
+      h1:         { color: "#268bd2", borderBottom: "2px solid #073642", paddingBottom: "0.25em", marginTop: "1.5em", marginBottom: "0.5em" },
+      h2:         { color: "#268bd2", borderBottom: "1px solid #073642", paddingBottom: "0.2em", marginTop: "1.4em", marginBottom: "0.4em" },
+      h3:         { color: "#2aa198", marginTop: "1.2em", marginBottom: "0.3em" },
+      h4:         { color: "#2aa198", marginTop: "1.1em", marginBottom: "0.3em" },
+      h5:         { color: "#b58900", marginTop: "1em", marginBottom: "0.3em" },
+      h6:         { color: "#b58900", marginTop: "1em", marginBottom: "0.3em" },
+      p:          { margin: "0.85em 0" },
+      strong:     { color: "#cb4b16" },
+      em:         { color: "#859900", fontStyle: "italic" },
+      del:        { color: "#586e75", textDecoration: "line-through" },
+      a:          { color: "#6c71c4", textDecoration: "none" },
+      code:       { background: "#073642", color: "#859900", padding: "2px 6px", borderRadius: "3px", fontFamily: '"Courier New", monospace', fontSize: "0.9em" },
+      pre:        { background: "#073642", color: "#839496", padding: "1em 1.2em", borderRadius: "4px", overflowX: "auto", margin: "1em 0", fontFamily: '"Courier New", monospace' },
+      blockquote: { borderLeft: "4px solid #586e75", paddingLeft: "1em", color: "#586e75", margin: "1em 0", fontStyle: "italic" },
+      ul:         { paddingLeft: "1.8em", margin: "0.7em 0" },
+      ol:         { paddingLeft: "1.8em", margin: "0.7em 0" },
+      li:         { margin: "0.3em 0" },
+      hr:         { border: "none", borderTop: "1px solid #073642", margin: "2em 0" },
+      table:      { borderCollapse: "collapse", width: "100%", margin: "1em 0" },
+      th:         { background: "#073642", color: "#268bd2", padding: "8px 12px", border: "1px solid #586e75", textAlign: "left" },
+      td:         { padding: "8px 12px", border: "1px solid #586e75" },
+      img:        { maxWidth: "100%", height: "auto" },
+      syntax:     { keyword: "#859900", string: "#2aa198", comment: "#586e75", number: "#d33682" },
+    },
+    monokai: {
+      body:       { background: "#272822", color: "#f8f8f2", fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: "1.7", padding: "2rem 3rem", maxWidth: "860px", margin: "0 auto" },
+      h1:         { color: "#66d9ef", borderBottom: "2px solid #49483e", paddingBottom: "0.25em", marginTop: "1.5em", marginBottom: "0.5em" },
+      h2:         { color: "#66d9ef", borderBottom: "1px solid #49483e", paddingBottom: "0.2em", marginTop: "1.4em", marginBottom: "0.4em" },
+      h3:         { color: "#a6e22e", marginTop: "1.2em", marginBottom: "0.3em" },
+      h4:         { color: "#a6e22e", marginTop: "1.1em", marginBottom: "0.3em" },
+      h5:         { color: "#fd971f", marginTop: "1em", marginBottom: "0.3em" },
+      h6:         { color: "#fd971f", marginTop: "1em", marginBottom: "0.3em" },
+      p:          { margin: "0.85em 0" },
+      strong:     { color: "#fd971f" },
+      em:         { color: "#e6db74", fontStyle: "italic" },
+      del:        { color: "#75715e", textDecoration: "line-through" },
+      a:          { color: "#ae81ff", textDecoration: "none" },
+      code:       { background: "#3e3d32", color: "#a6e22e", padding: "2px 6px", borderRadius: "3px", fontFamily: '"Courier New", monospace', fontSize: "0.9em" },
+      pre:        { background: "#3e3d32", color: "#f8f8f2", padding: "1em 1.2em", borderRadius: "4px", overflowX: "auto", margin: "1em 0", fontFamily: '"Courier New", monospace' },
+      blockquote: { borderLeft: "4px solid #75715e", paddingLeft: "1em", color: "#75715e", margin: "1em 0", fontStyle: "italic" },
+      ul:         { paddingLeft: "1.8em", margin: "0.7em 0" },
+      ol:         { paddingLeft: "1.8em", margin: "0.7em 0" },
+      li:         { margin: "0.3em 0" },
+      hr:         { border: "none", borderTop: "1px solid #49483e", margin: "2em 0" },
+      table:      { borderCollapse: "collapse", width: "100%", margin: "1em 0" },
+      th:         { background: "#3e3d32", color: "#66d9ef", padding: "8px 12px", border: "1px solid #75715e", textAlign: "left" },
+      td:         { padding: "8px 12px", border: "1px solid #75715e" },
+      img:        { maxWidth: "100%", height: "auto" },
+      syntax:     { keyword: "#f92672", string: "#e6db74", comment: "#75715e", number: "#ae81ff" },
+    },
+    github: {
+      body:       { background: "#ffffff", color: "#1f2328", fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: "1.7", padding: "2rem 3rem", maxWidth: "860px", margin: "0 auto" },
+      h1:         { color: "#1f2328", borderBottom: "2px solid #d8dee4", paddingBottom: "0.25em", marginTop: "1.5em", marginBottom: "0.5em" },
+      h2:         { color: "#1f2328", borderBottom: "1px solid #d8dee4", paddingBottom: "0.2em", marginTop: "1.4em", marginBottom: "0.4em" },
+      h3:         { color: "#1f2328", marginTop: "1.2em", marginBottom: "0.3em" },
+      h4:         { color: "#1f2328", marginTop: "1.1em", marginBottom: "0.3em" },
+      h5:         { color: "#57606a", marginTop: "1em", marginBottom: "0.3em" },
+      h6:         { color: "#57606a", marginTop: "1em", marginBottom: "0.3em" },
+      p:          { margin: "0.85em 0" },
+      strong:     { color: "#1f2328" },
+      em:         { color: "#1f2328", fontStyle: "italic" },
+      del:        { color: "#59636e", textDecoration: "line-through" },
+      a:          { color: "#0969da", textDecoration: "none" },
+      code:       { background: "#f6f8fa", color: "#cf222e", padding: "2px 6px", borderRadius: "3px", fontFamily: '"Courier New", monospace', fontSize: "0.9em" },
+      pre:        { background: "#f6f8fa", color: "#1f2328", padding: "1em 1.2em", borderRadius: "4px", overflowX: "auto", margin: "1em 0", fontFamily: '"Courier New", monospace' },
+      blockquote: { borderLeft: "4px solid #d0d7de", paddingLeft: "1em", color: "#57606a", margin: "1em 0", fontStyle: "italic" },
+      ul:         { paddingLeft: "1.8em", margin: "0.7em 0" },
+      ol:         { paddingLeft: "1.8em", margin: "0.7em 0" },
+      li:         { margin: "0.3em 0" },
+      hr:         { border: "none", borderTop: "1px solid #d0d7de", margin: "2em 0" },
+      table:      { borderCollapse: "collapse", width: "100%", margin: "1em 0" },
+      th:         { background: "#f6f8fa", color: "#1f2328", padding: "8px 12px", border: "1px solid #d0d7de", textAlign: "left" },
+      td:         { padding: "8px 12px", border: "1px solid #d0d7de" },
+      img:        { maxWidth: "100%", height: "auto" },
+      syntax:     { keyword: "#cf222e", string: "#0a3069", comment: "#6e7781", number: "#0550ae" },
+    },
   };
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -476,6 +554,7 @@
       '<meta charset="UTF-8">',
       '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
       "<title>Document</title>",
+      "<style>html,body{min-height:100%}</style>",
       "</head>",
       `<body style="${styleStr(th.body)}">`,
       body,
@@ -496,6 +575,31 @@
       // The previous HTML output is left in place.
       console.error("md-to-html: parse failed", e);
     }
+    updatePreview();
+  }
+
+  // ── HTML output view mode (raw / preview / both) ────────────────────────
+
+  const HTML_VIEW_MODE_KEY = "mdToHtmlViewMode";
+  let htmlViewMode = "raw";
+
+  // Sandboxed with no allow-scripts/allow-same-origin — the rendered
+  // document is untrusted (it's built from whatever markdown the user
+  // typed or uploaded), so the iframe must not be able to execute script
+  // or reach the parent page.
+  function updatePreview() {
+    if (htmlViewMode === "raw") return;
+    const iframe = document.getElementById("html-preview");
+    iframe.srcdoc = document.getElementById("html-output").value;
+  }
+
+  function applyHtmlViewMode(mode) {
+    htmlViewMode = mode;
+    document.getElementById("pane-html").classList.remove("view-raw", "view-preview", "view-both");
+    document.getElementById("pane-html").classList.add("view-" + mode);
+    document.getElementById("html-view-mode").value = mode;
+    safeStorage.save(HTML_VIEW_MODE_KEY, mode);
+    updatePreview();
   }
 
   // Debounced preview update for the input handler — avoids re-parsing the
@@ -525,6 +629,12 @@
   // wraps setItem/removeItem/getItem to survive quota or private-mode errors.
 
   let toastTimer = null;
+
+  function updateStats() {
+    const text = document.getElementById("md-input").value;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    document.getElementById("md-stats").textContent = `${words} words · ${text.length} chars`;
+  }
 
   function showToast(msg) {
     const toast = document.getElementById("toast");
@@ -815,7 +925,17 @@
   // ── Context menu ──────────────────────────────────────────────────────────
 
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
-  const modKey = isMac ? "\u2318" : "Ctrl";
+  const modKey = isMac ? "⌘" : "Ctrl";
+
+  /* The Copy buttons' markup hardcodes the ⌘ glyph, which only makes
+     sense on macOS — swap it for a platform-neutral copy icon elsewhere. */
+  function applyPlatformIcons() {
+    if (isMac) return;
+    ["copy-md-btn", "copy-btn"].forEach(function (id) {
+      const btn = document.getElementById(id);
+      btn.textContent = btn.textContent.replace("⌘", "⧉");
+    });
+  }
 
   const CTX_MENU_DEF = [
     { label: "Add Link", action: "addLink" },
@@ -858,6 +978,20 @@
   let ctxState = { start: 0, end: 0, text: "" };
   let subTimer = null;
 
+  /* Shared by mouse hover and keyboard ArrowRight/Enter — opens `row`'s
+     submenu, closes any sibling submenu open in the same container, and
+     flips the submenu if it would overflow the viewport.               */
+  function openCtxSubmenu(row, sub, container) {
+    clearTimeout(subTimer);
+    container.querySelectorAll(":scope > .ctx-item.has-sub.open").forEach(function (el) {
+      if (el !== row) el.classList.remove("open");
+    });
+    row.classList.add("open");
+    const rect = sub.getBoundingClientRect();
+    sub.classList.toggle("flip-h", rect.right > window.innerWidth);
+    sub.classList.toggle("flip-v", rect.bottom > window.innerHeight);
+  }
+
   function buildCtxItems(container, items) {
     for (const item of items) {
       if (item.type === "separator") {
@@ -869,6 +1003,7 @@
 
       const row = document.createElement("div");
       row.className = "ctx-item";
+      row.tabIndex = -1;
 
       const label = document.createElement("span");
       label.textContent = item.label;
@@ -878,7 +1013,7 @@
         row.classList.add("has-sub");
         const arrow = document.createElement("span");
         arrow.className = "ctx-arrow";
-        arrow.textContent = "\u25B8";
+        arrow.textContent = "▸";
         row.appendChild(arrow);
 
         const sub = document.createElement("div");
@@ -887,16 +1022,7 @@
         row.appendChild(sub);
 
         row.addEventListener("mouseenter", function () {
-          clearTimeout(subTimer);
-          // close sibling submenus
-          container.querySelectorAll(":scope > .ctx-item.has-sub.open").forEach(function (el) {
-            if (el !== row) el.classList.remove("open");
-          });
-          row.classList.add("open");
-          // flip if overflowing viewport
-          const rect = sub.getBoundingClientRect();
-          sub.classList.toggle("flip-h", rect.right > window.innerWidth);
-          sub.classList.toggle("flip-v", rect.bottom > window.innerHeight);
+          openCtxSubmenu(row, sub, container);
         });
         row.addEventListener("mouseleave", function () {
           subTimer = setTimeout(function () { row.classList.remove("open"); }, 150);
@@ -919,6 +1045,77 @@
     }
   }
 
+  /* Direct .ctx-item children of `container` — skips separators and
+     items nested inside an (open or closed) submenu.                  */
+  function ctxItemsOf(container) {
+    return Array.from(container.querySelectorAll(":scope > .ctx-item"));
+  }
+
+  function onCtxMenuKeydown(e) {
+    const menu = document.getElementById("ctx-menu");
+    if (menu.classList.contains("hidden")) return;
+
+    const current  = document.activeElement;
+    const inMenu   = current && current.classList && current.classList.contains("ctx-item");
+    const container = inMenu ? current.parentElement : menu;
+    const items = ctxItemsOf(container);
+    const idx = inMenu ? items.indexOf(current) : -1;
+
+    switch (e.key) {
+      case "ArrowDown":
+      case "Tab": {
+        if (e.key === "Tab" && e.shiftKey) break; // handled after the switch, below
+        e.preventDefault();
+        items[(idx + 1 + items.length) % items.length].focus();
+        break;
+      }
+      case "ArrowUp": {
+        e.preventDefault();
+        items[(idx - 1 + items.length) % items.length].focus();
+        break;
+      }
+      case "ArrowRight": {
+        if (inMenu && current.classList.contains("has-sub")) {
+          e.preventDefault();
+          const sub = current.querySelector(":scope > .ctx-submenu");
+          openCtxSubmenu(current, sub, container);
+          const subItems = ctxItemsOf(sub);
+          if (subItems[0]) subItems[0].focus();
+        }
+        break;
+      }
+      case "ArrowLeft": {
+        const parentSubmenu = container.closest(".ctx-submenu");
+        if (parentSubmenu) {
+          e.preventDefault();
+          const parentRow = parentSubmenu.parentElement;
+          parentRow.classList.remove("open");
+          parentRow.focus();
+        }
+        break;
+      }
+      case "Enter":
+      case " ": {
+        if (!inMenu) break;
+        e.preventDefault();
+        if (current.classList.contains("has-sub")) {
+          const sub = current.querySelector(":scope > .ctx-submenu");
+          openCtxSubmenu(current, sub, container);
+          const subItems = ctxItemsOf(sub);
+          if (subItems[0]) subItems[0].focus();
+        } else {
+          current.click();
+        }
+        break;
+      }
+    }
+
+    if (e.key === "Tab" && e.shiftKey) {
+      e.preventDefault();
+      items[(idx - 1 + items.length) % items.length].focus();
+    }
+  }
+
   function showCtxMenu(x, y) {
     hideCtxMenu();
     const menu = document.getElementById("ctx-menu");
@@ -933,6 +1130,11 @@
     const rect = menu.getBoundingClientRect();
     if (rect.right > window.innerWidth) menu.style.left = Math.max(0, x - rect.width) + "px";
     if (rect.bottom > window.innerHeight) menu.style.top = Math.max(0, y - rect.height) + "px";
+
+    // Focus the first item so arrow-key navigation works without an
+    // initial mouse hover.
+    const firstItem = menu.querySelector(":scope > .ctx-item");
+    if (firstItem) firstItem.focus();
   }
 
   function hideCtxMenu() {
@@ -1081,6 +1283,49 @@
     convert();
   }
 
+  // ── Tab-to-indent ────────────────────────────────────────────────────────
+
+  function handleEditorTab(e) {
+    if (e.key !== "Tab") return;
+    e.preventDefault();
+    const ta = document.getElementById("md-input");
+    const val = ta.value;
+    const s = ta.selectionStart;
+    const eIdx = ta.selectionEnd;
+
+    if (!e.shiftKey && s === eIdx) {
+      // No selection: just insert an indent at the cursor.
+      ta.value = val.slice(0, s) + "  " + val.slice(eIdx);
+      ta.focus();
+      ta.setSelectionRange(s + 2, s + 2);
+      convert();
+      return;
+    }
+
+    // Selection (or Shift+Tab with the cursor on a line): indent/outdent
+    // every touched line, mirroring prefixLines()'s whole-line-range
+    // behaviour and selection handling.
+    const lineStart = val.lastIndexOf("\n", s - 1) + 1;
+    let lineEnd = val.indexOf("\n", eIdx);
+    if (lineEnd === -1) lineEnd = val.length;
+    const selected = val.slice(lineStart, lineEnd);
+    const lines = selected.split("\n");
+
+    const transformed = lines.map(function (line) {
+      if (e.shiftKey) {
+        if (line.startsWith("  ")) return line.slice(2);
+        if (line.startsWith(" ") || line.startsWith("\t")) return line.slice(1);
+        return line;
+      }
+      return "  " + line;
+    }).join("\n");
+
+    ta.value = val.slice(0, lineStart) + transformed + val.slice(lineEnd);
+    ta.focus();
+    ta.setSelectionRange(lineStart, lineStart + transformed.length);
+    convert();
+  }
+
   // ── Action dispatcher ───────────────────────────────────────────────────
 
   function execCtxAction(action) {
@@ -1218,6 +1463,137 @@
       // collapse the other pane
       other.classList.add("collapsed");
     }
+    updateResizerVisibility();
+  }
+
+  // ── Resizable divider between the md/html panes ─────────────────────────
+
+  const PANE_SPLIT_KEY = "mdToHtmlSplit";
+  const SPLIT_MIN = 20;
+  const SPLIT_MAX = 80;
+
+  function updateResizerVisibility() {
+    const resizer = document.getElementById("pane-resizer");
+    const md      = document.getElementById("pane-md");
+    const html    = document.getElementById("pane-html");
+    if (!resizer) return;
+    const eitherCollapsed = md.classList.contains("collapsed") || html.classList.contains("collapsed");
+    resizer.classList.toggle("hidden", eitherCollapsed);
+  }
+
+  function applySplit(mdPercent) {
+    const md   = document.getElementById("pane-md");
+    const html = document.getElementById("pane-html");
+    const toolbarLeft = document.getElementById("toolbar-left");
+    const clamped = Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, mdPercent));
+    md.style.flex   = `0 0 ${clamped}%`;
+    html.style.flex = `0 0 ${100 - clamped}%`;
+    // Pin the left toolbar group's width to match the markdown pane so its
+    // trailing Copy/Download MD buttons stay above the divider. Leave
+    // toolbar-right on its default flex:1 — it should just keep filling
+    // whatever space remains and stay flush against the right edge (its
+    // justify-content: flex-end already does that), not track a percentage
+    // of its own: pinning both sides to fixed percentages left a few
+    // pixels unaccounted for (the gap between them), so toolbar-right
+    // visibly drifted instead of staying put.
+    toolbarLeft.style.flex = `0 0 ${clamped}%`;
+  }
+
+  function initPaneResizer() {
+    const resizer = document.getElementById("pane-resizer");
+    const editorPane = document.querySelector(".editor-pane");
+    if (!resizer || !editorPane) return;
+
+    // A valid saved split is always within [SPLIT_MIN, SPLIT_MAX] — it can
+    // only have been written by applySplit(), which clamps to that range
+    // before saving. Anything outside it (e.g. a stale "0" from an earlier
+    // bug in endDrag's parsing) is corrupt, so ignore it and keep the CSS
+    // default rather than silently clamping it to an edge.
+    const saved = parseFloat(safeStorage.get(PANE_SPLIT_KEY));
+    if (!isNaN(saved) && saved >= SPLIT_MIN && saved <= SPLIT_MAX) applySplit(saved);
+
+    let dragging = false;
+
+    resizer.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      resizer.classList.add("dragging");
+      resizer.setPointerCapture(e.pointerId);
+    });
+
+    resizer.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const rect = editorPane.getBoundingClientRect();
+      const percent = ((e.clientX - rect.left) / rect.width) * 100;
+      applySplit(percent);
+    });
+
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      resizer.classList.remove("dragging");
+      const md = document.getElementById("pane-md");
+      // flex is "0 0 45%" — match the percentage itself, not the leading
+      // "0 0" grow/shrink values (a bare [\d.]+ match grabs that "0" first).
+      const m = md.style.flex.match(/(\d+(?:\.\d+)?)%/);
+      if (m) safeStorage.save(PANE_SPLIT_KEY, m[1]);
+    }
+
+    resizer.addEventListener("pointerup", endDrag);
+    resizer.addEventListener("pointercancel", endDrag);
+
+    updateResizerVisibility();
+  }
+
+  // ── Resizable divider between preview/code in "Both" view mode ──────────
+
+  const OUTPUT_SPLIT_KEY = "mdToHtmlOutputSplit";
+
+  function applyOutputSplit(previewPercent) {
+    const iframe = document.getElementById("html-preview");
+    const output = document.getElementById("html-output");
+    const clamped = Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, previewPercent));
+    iframe.style.flex = `0 0 ${clamped}%`;
+    output.style.flex = `0 0 ${100 - clamped}%`;
+  }
+
+  function initOutputResizer() {
+    const resizer = document.getElementById("output-resizer");
+    const wrap = document.querySelector(".html-output-wrap");
+    if (!resizer || !wrap) return;
+
+    // See the matching comment in initPaneResizer(): reject anything
+    // outside the valid clamp range instead of silently clamping it.
+    const saved = parseFloat(safeStorage.get(OUTPUT_SPLIT_KEY));
+    if (!isNaN(saved) && saved >= SPLIT_MIN && saved <= SPLIT_MAX) applyOutputSplit(saved);
+
+    let dragging = false;
+
+    resizer.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      resizer.classList.add("dragging");
+      resizer.setPointerCapture(e.pointerId);
+    });
+
+    resizer.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const rect = wrap.getBoundingClientRect();
+      const percent = ((e.clientY - rect.top) / rect.height) * 100;
+      applyOutputSplit(percent);
+    });
+
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+      resizer.classList.remove("dragging");
+      const iframe = document.getElementById("html-preview");
+      // Same fix as the pane resizer's endDrag: match the percentage, not
+      // the leading "0 0" grow/shrink values in the flex shorthand.
+      const m = iframe.style.flex.match(/(\d+(?:\.\d+)?)%/);
+      if (m) safeStorage.save(OUTPUT_SPLIT_KEY, m[1]);
+    }
+
+    resizer.addEventListener("pointerup", endDrag);
+    resizer.addEventListener("pointercancel", endDrag);
   }
 
   function init() {
@@ -1225,11 +1601,23 @@
 
     siteTheme.init();
     initTablePicker();
+    initPaneResizer();
+    initOutputResizer();
+    applyPlatformIcons();
+
+    const savedViewMode = safeStorage.get(HTML_VIEW_MODE_KEY);
+    applyHtmlViewMode(
+      savedViewMode === "preview" || savedViewMode === "both" ? savedViewMode : "raw"
+    );
+    document.getElementById("html-view-mode").addEventListener("change", (e) => {
+      applyHtmlViewMode(e.target.value);
+    });
 
     document.getElementById("md-input").addEventListener("input", () => {
       // Save BEFORE converting so that if the parser ever hangs or throws,
       // the latest textarea content is still persisted for next page load.
       safeStorage.save("mdToHtmlContent", document.getElementById("md-input").value);
+      updateStats();
       scheduleConvert();
     });
 
@@ -1284,8 +1672,11 @@
       if (!menu.classList.contains("hidden") && !menu.contains(e.target)) hideCtxMenu();
     });
 
+    document.getElementById("ctx-menu").addEventListener("keydown", onCtxMenuKeydown);
+
     window.addEventListener("resize", hideCtxMenu);
     document.getElementById("md-input").addEventListener("scroll", hideCtxMenu);
+    document.getElementById("md-input").addEventListener("keydown", handleEditorTab);
 
     const DEMO = `# Welcome to MD → HTML
 
@@ -1325,6 +1716,7 @@ Inline \`code\` is styled too.
 
     function loadContent(text) {
       document.getElementById("md-input").value = text;
+      updateStats();
       convert();
     }
 

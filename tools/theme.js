@@ -12,13 +12,26 @@
 (function (global) {
   "use strict";
 
+  /* Inline SVG instead of ☀ / ☽ glyphs — those came out spindly and
+     inconsistent across fonts/platforms in Share Tech Mono. Icon
+     reflects the CURRENT theme: sun showing while light (press for
+     dark), moon showing while dark (press for light).              */
+  var SUN_ICON =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<circle cx="12" cy="12" r="4"/>' +
+    '<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>' +
+    '</svg>';
+  var MOON_ICON =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>' +
+    '</svg>';
+
   function apply(isLight) {
     document.body.classList.toggle("light", isLight);
     const btn = document.getElementById("theme-btn");
-    /* ● / ○ render uniformly across fonts; ☀ / ☽ came out spindly in
-       Share Tech Mono. Hollow circle = currently-light (press to go
-       dark), filled circle = currently-dark (press to go light).    */
-    if (btn) btn.textContent = isLight ? "○" : "●";
+    if (btn) btn.innerHTML = isLight ? SUN_ICON : MOON_ICON;
   }
 
   /* safeStorage (tools/storage.js) is loaded before theme.js on every

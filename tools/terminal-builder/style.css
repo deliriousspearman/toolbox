@@ -1,0 +1,421 @@
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+
+header {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0 8px;
+  text-align: center;
+}
+
+header h1 {
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  letter-spacing: 0.4em;
+  color: var(--accent);
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+  margin-top: 4px;
+}
+
+#home-btn {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  padding: 5px 9px;
+  line-height: 1;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+#home-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#theme-btn {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  padding: 5px 9px;
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+#theme-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Main layout ──────────────────────────────────────── */
+/* Grid dashboard: settings (top-left) + preview (top-right) share the
+   upper row, output spans both columns underneath. Everything sized to
+   fit the viewport with no page scroll — each section scrolls
+   internally if its content overflows. */
+
+main {
+  width: 100%;
+  max-width: 1800px;
+  min-height: 0;
+  flex: 1;
+  padding: 1rem 2rem 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 2fr 1fr;
+  grid-template-areas:
+    "settings preview"
+    "output   output";
+  gap: 1.25rem;
+}
+
+.settings-section { grid-area: settings; }
+.preview-section  { grid-area: preview; }
+.output-section   { grid-area: output; }
+
+section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Below this width three side-by-side sections stop making sense —
+   fall back to a normal stacked, scrollable page. */
+@media (max-width: 760px) {
+  body {
+    height: auto;
+    overflow: visible;
+  }
+
+  main {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+  }
+
+  section {
+    overflow: visible;
+  }
+
+  .code-wrap,
+  .code-wrap textarea,
+  .preview-mount,
+  #html-output {
+    flex: none;
+    min-height: 160px;
+  }
+
+  .code-wrap textarea,
+  #html-output {
+    resize: vertical;
+  }
+}
+
+.section-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Settings ─────────────────────────────────────────── */
+
+.options-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field-wrap label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title-wrap {
+  flex: 1;
+  min-width: 220px;
+}
+
+#tb-title,
+.lang-wrap select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#tb-title:focus,
+.lang-wrap select:focus {
+  border-color: var(--accent);
+}
+
+.lang-wrap select {
+  min-width: 150px;
+}
+
+.bg-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bg-wrap select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  padding: 9px 12px;
+  outline: none;
+  min-width: 140px;
+  transition: border-color 0.2s;
+}
+
+.bg-wrap select:focus {
+  border-color: var(--accent);
+}
+
+.bg-wrap input[type="color"] {
+  width: 46px;
+  height: 38px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.bg-wrap input[type="color"].hidden {
+  display: none;
+}
+
+.fontsize-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#tb-fontsize {
+  width: 64px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  padding: 9px 10px;
+  outline: none;
+  text-align: right;
+  transition: border-color 0.2s;
+}
+
+#tb-fontsize:focus {
+  border-color: var(--accent);
+}
+
+.unit {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+.code-wrap {
+  flex: 1;
+  min-height: 0;
+}
+
+.code-wrap textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.code-wrap textarea:focus {
+  border-color: var(--accent);
+}
+
+/* ── Preview ──────────────────────────────────────────── */
+
+.preview-mount {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+}
+
+.preview-mount > div {
+  width: 100%;
+}
+
+/* ── Section header row ───────────────────────────────── */
+/* Shared by any section that pairs its label with right-aligned
+   actions — settings' reset button, output's format toggle + copy. */
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+#reset-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+#reset-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Output ───────────────────────────────────────────── */
+
+.format-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+}
+
+.format-toggle input[type="checkbox"] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+#copy-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+#copy-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#html-output {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  padding: 12px 14px;
+  outline: none;
+}
+
+/* ── Toast ────────────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: 3px;
+  display: none;
+  z-index: 200;
+  white-space: nowrap;
+}
+
+.toast.visible {
+  display: block;
+}

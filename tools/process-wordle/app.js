@@ -467,15 +467,21 @@
 
   // ── Animations ──────────────────────────────────────────
 
+  function prefersReducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
   function animateFlip(rowIndex, callback) {
     const rows = document.getElementById("grid").children;
     if (!rows[rowIndex]) return;
     const cells = rows[rowIndex].children;
-    const totalDuration = (cells.length - 1) * 150 + 450;
+    const reduced = prefersReducedMotion();
+    const stagger = reduced ? 0 : 150;
+    const totalDuration = reduced ? 0 : (cells.length - 1) * 150 + 450;
 
     for (let i = 0; i < cells.length; i++) {
       const cell = cells[i];
-      cell.style.animationDelay = `${i * 150}ms`;
+      cell.style.animationDelay = `${i * stagger}ms`;
       cell.classList.add("flip");
     }
 
@@ -486,11 +492,13 @@
     const rows = document.getElementById("grid").children;
     if (!rows[rowIndex]) { if (callback) callback(); return; }
     const cells = rows[rowIndex].children;
-    const totalDuration = (cells.length - 1) * 100 + 600;
+    const reduced = prefersReducedMotion();
+    const stagger = reduced ? 0 : 100;
+    const totalDuration = reduced ? 0 : (cells.length - 1) * 100 + 600;
 
     for (let i = 0; i < cells.length; i++) {
       const cell = cells[i];
-      cell.style.animationDelay = `${i * 100}ms`;
+      cell.style.animationDelay = `${i * stagger}ms`;
       cell.classList.add("bounce");
       cell.addEventListener("animationend", () => {
         cell.classList.remove("bounce");

@@ -67,10 +67,12 @@ header .subtitle {
 /* ── Theme button ────────────────────────────────────── */
 
 #theme-btn {
-  position: absolute;
+  position: fixed;
+  top: 14px;
   right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 3px;
@@ -180,7 +182,7 @@ main {
 }
 
 .pane {
-  flex: 1;
+  flex: 1 1 50%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -191,6 +193,34 @@ main {
 
 .pane:last-child {
   border-right: none;
+}
+
+/* ── Pane resizer ────────────────────────────────────── */
+
+.pane-resizer {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+}
+
+.pane-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: 0 2px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.15s;
+}
+
+.pane-resizer:hover::after,
+.pane-resizer.dragging::after {
+  background: var(--accent);
+}
+
+.pane-resizer.hidden {
+  display: none;
 }
 
 /* 3px accent edge on the outside of each pane so the user can tell
@@ -210,6 +240,39 @@ main {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.pane-label-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pane-label-controls select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 0.65rem;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 1px 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.pane-label-controls select:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pane-stats {
+  font-size: 0.65rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-dim);
+  white-space: nowrap;
 }
 
 /* Tint the label of the editable pane so it reads as the source-of-truth
@@ -254,6 +317,71 @@ main {
 
 #html-output {
   color: var(--text-dim);
+}
+
+/* ── HTML output: raw / preview / both ───────────────── */
+
+.html-output-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.html-preview {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  border: none;
+  background: #fff;
+}
+
+/* Default (view-raw): code only */
+#pane-html.view-raw .html-preview { display: none; }
+#pane-html.view-raw textarea      { display: block; flex: 1; }
+
+/* Preview only */
+#pane-html.view-preview .html-preview { display: block; flex: 1; }
+#pane-html.view-preview textarea      { display: none; }
+
+/* Both: preview on top (larger), raw code below */
+#pane-html.view-both .html-preview {
+  display: block;
+  flex: 1 1 70%;
+}
+#pane-html.view-both textarea {
+  display: block;
+  flex: 1 1 30%;
+}
+
+/* ── Output resizer (preview/code split in "Both" mode) ──────────── */
+
+.output-resizer {
+  display: none;
+  flex: 0 0 6px;
+  cursor: row-resize;
+  background: transparent;
+  position: relative;
+}
+
+.output-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: 2px 0;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.15s;
+}
+
+.output-resizer:hover::after,
+.output-resizer.dragging::after {
+  background: var(--accent);
+}
+
+#pane-html.view-both .output-resizer {
+  display: block;
 }
 
 /* ── Modal ───────────────────────────────────────────── */
@@ -450,16 +578,20 @@ body.light .modal {
   user-select: none;
 }
 
-.ctx-item:hover {
+.ctx-item:hover,
+.ctx-item:focus {
   background: var(--accent);
   color: var(--bg);
+  outline: none;
 }
 
-body.light .ctx-item:hover {
+body.light .ctx-item:hover,
+body.light .ctx-item:focus {
   color: #fff;
 }
 
-.ctx-item:hover .ctx-shortcut {
+.ctx-item:hover .ctx-shortcut,
+.ctx-item:focus .ctx-shortcut {
   color: inherit;
   opacity: 0.7;
 }
@@ -476,7 +608,8 @@ body.light .ctx-item:hover {
   font-size: 0.65rem;
 }
 
-.ctx-item:hover .ctx-arrow {
+.ctx-item:hover .ctx-arrow,
+.ctx-item:focus .ctx-arrow {
   color: inherit;
 }
 
