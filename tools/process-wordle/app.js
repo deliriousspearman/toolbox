@@ -467,17 +467,12 @@
 
   // ── Animations ──────────────────────────────────────────
 
-  function prefersReducedMotion() {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }
-
   function animateFlip(rowIndex, callback) {
     const rows = document.getElementById("grid").children;
     if (!rows[rowIndex]) return;
     const cells = rows[rowIndex].children;
-    const reduced = prefersReducedMotion();
-    const stagger = reduced ? 0 : 150;
-    const totalDuration = reduced ? 0 : (cells.length - 1) * 150 + 450;
+    const stagger = 150;
+    const totalDuration = (cells.length - 1) * 150 + 450;
 
     for (let i = 0; i < cells.length; i++) {
       const cell = cells[i];
@@ -492,9 +487,8 @@
     const rows = document.getElementById("grid").children;
     if (!rows[rowIndex]) { if (callback) callback(); return; }
     const cells = rows[rowIndex].children;
-    const reduced = prefersReducedMotion();
-    const stagger = reduced ? 0 : 100;
-    const totalDuration = reduced ? 0 : (cells.length - 1) * 100 + 600;
+    const stagger = 100;
+    const totalDuration = (cells.length - 1) * 100 + 600;
 
     for (let i = 0; i < cells.length; i++) {
       const cell = cells[i];

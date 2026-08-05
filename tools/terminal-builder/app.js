@@ -297,26 +297,38 @@
     const body = highlightCode(state.code, state.lang, syn);
     const title = escapeHtml(state.title);
 
-    const outer  = `<div style="background:${bg};border-radius:8px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,0.35);font-family:${OUTPUT_FONT};max-width:100%;">`;
-    const bar    = `<div style="display:flex;align-items:center;padding:9px 14px;background:${barColor};position:relative;">`;
+    const shadow = state.shadow ? "box-shadow:0 12px 28px rgba(0,0,0,0.35);" : "";
+    const outer  = `<div style="background:${bg};border-radius:8px;overflow:hidden;${shadow}font-family:${OUTPUT_FONT};max-width:100%;">`;
+    const dotsJustify = state.dotsAlign === "right" ? "justify-content:flex-end;" : "";
+    const bar    = `<div style="display:flex;align-items:center;${dotsJustify}padding:9px 14px;background:${barColor};position:relative;">`;
     const dotRed = `<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#ff5f56;margin-right:7px;"></span>`;
     const dotYlw = `<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#ffbd2e;margin-right:7px;"></span>`;
     const dotGrn = `<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#27c93f;"></span>`;
-    const titleEl = `<span style="position:absolute;left:0;right:0;text-align:center;font-size:12.5px;color:${titleColor};pointer-events:none;">${title}</span>`;
+    const dots = state.dotsAlign === "none" ? "" : dotRed + dotYlw + dotGrn;
+    // Title bar text stays slightly smaller than the body, scaled off the
+    // user's font-size setting at the same ratio as the original fixed
+    // 12.5px-at-13px-body default.
+    const titleFontSize = Math.round(state.fontSize * (12.5 / 13) * 10) / 10;
+    const titleEl = `<span style="position:absolute;left:0;right:0;text-align:center;font-size:${titleFontSize}px;color:${titleColor};pointer-events:none;">${title}</span>`;
+    const wrapStyle = state.wrap
+      ? "white-space:pre-wrap;overflow-wrap:break-word;"
+      : "white-space:pre;overflow-x:auto;";
     // <pre> is whitespace-sensitive, so its contents are never touched by
     // pretty-printing — only the surrounding chrome tags get indented.
-    const pre    = `<pre style="margin:0;padding:16px 18px;overflow-x:auto;font-size:${state.fontSize}px;line-height:1.6;color:${textColor};"><code style="font-family:inherit;">${body}</code></pre>`;
+    const pre    = `<pre style="margin:0;padding:16px 18px;${wrapStyle}font-size:${state.fontSize}px;line-height:1.6;color:${textColor};"><code style="font-family:inherit;">${body}</code></pre>`;
 
     if (!pretty) {
-      return outer + bar + dotRed + dotYlw + dotGrn + titleEl + "</div>" + pre + "</div>";
+      return outer + bar + dots + titleEl + "</div>" + pre + "</div>";
     }
+
+    const dotLines = state.dotsAlign === "none"
+      ? []
+      : ["    " + dotRed, "    " + dotYlw, "    " + dotGrn];
 
     return [
       outer,
       "  " + bar,
-      "    " + dotRed,
-      "    " + dotYlw,
-      "    " + dotGrn,
+      ...dotLines,
       "    " + titleEl,
       "  </div>",
       "  " + pre,
@@ -374,6 +386,9 @@
     code: DEMO_CODE,
     formatOutput: true,
     fontSize: 13,
+    shadow: true,
+    wrap: false,
+    dotsAlign: "left",
   };
 
   const FONT_SIZE_MIN = 10;
@@ -425,6 +440,9 @@
     $("tb-code").value = state.code;
     $("tb-format-toggle").checked = state.formatOutput;
     $("tb-fontsize").value = state.fontSize;
+    $("tb-shadow").checked = state.shadow;
+    $("tb-wrap").checked = state.wrap;
+    $("tb-dots-align").value = state.dotsAlign;
     updateBgColorVisibility();
   }
 
@@ -446,6 +464,13 @@
         // preset (if any) the stored colour matches so the dropdown
         // doesn't silently disagree with the swatch.
         if (!("bgPreset" in parsed)) state.bgPreset = presetForColor(state.bgColor);
+        // Older saved state predates the left/right/none dropdown and
+        // instead has a "buttons on right" boolean — carry its intent
+        // forward instead of silently resetting everyone to "left".
+        if ("dotsRight" in parsed && !("dotsAlign" in parsed)) {
+          state.dotsAlign = parsed.dotsRight ? "right" : "left";
+        }
+        delete state.dotsRight;
       } catch (e) {
         console.warn("terminal-builder: saved state JSON invalid", e);
       }
@@ -493,6 +518,21 @@
 
     $("tb-format-toggle").addEventListener("change", () => {
       state.formatOutput = $("tb-format-toggle").checked;
+      update();
+    });
+
+    $("tb-shadow").addEventListener("change", () => {
+      state.shadow = $("tb-shadow").checked;
+      update();
+    });
+
+    $("tb-wrap").addEventListener("change", () => {
+      state.wrap = $("tb-wrap").checked;
+      update();
+    });
+
+    $("tb-dots-align").addEventListener("change", () => {
+      state.dotsAlign = $("tb-dots-align").value;
       update();
     });
 

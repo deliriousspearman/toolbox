@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v19";
+const CACHE_VERSION = "v29";
 const CACHE_NAME = "tools-" + CACHE_VERSION;
 
 const PRECACHE_URLS = [

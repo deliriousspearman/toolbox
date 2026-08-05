@@ -179,7 +179,8 @@ section {
 }
 
 #tb-title,
-.lang-wrap select {
+.lang-wrap select,
+.dots-align-wrap select {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 3px;
@@ -192,12 +193,17 @@ section {
 }
 
 #tb-title:focus,
-.lang-wrap select:focus {
+.lang-wrap select:focus,
+.dots-align-wrap select:focus {
   border-color: var(--accent);
 }
 
 .lang-wrap select {
   min-width: 150px;
+}
+
+.dots-align-wrap select {
+  min-width: 110px;
 }
 
 .bg-controls {
@@ -265,6 +271,20 @@ section {
   font-size: 0.8rem;
   color: var(--text-dim);
   letter-spacing: 0.05em;
+}
+
+.checkbox-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+}
+
+.checkbox-control input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .code-wrap {
