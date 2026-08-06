@@ -384,6 +384,190 @@ main {
   display: block;
 }
 
+/* ── Markdown input: code / live view ────────────────── */
+
+/* Direct-child selectors matter here: #md-input is a direct child of
+   #pane-md, but the per-block .md-live-editor textareas created inside
+   #md-live are not — a descendant selector would match (and wrongly
+   hide) those too. */
+#pane-md.view-code > textarea { display: block; }
+#pane-md.view-code .md-live { display: none; }
+#pane-md.view-live > textarea { display: none; }
+#pane-md.view-live .md-live { display: flex; }
+
+.md-live {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--surface);
+  padding: 0.65rem 0.75rem;
+  font-family: var(--font);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--text);
+}
+
+/* flex-shrink: 0 is required, not cosmetic: .md-live is a flex column
+   with overflow-y: auto expecting to scroll once content overflows, but
+   flexbox tries to shrink items to fit before it lets the container
+   overflow. Blocks with overflow-x: auto (.md-pre, .md-table below) are
+   hit hardest — per the flexbox spec, a flex item's automatic minimum
+   size becomes 0 once its overflow isn't visible on both axes, so
+   without flex-shrink: 0 those blocks could get squeezed down to a
+   sliver (looking like blank space) whenever total content exceeds the
+   visible height, and activating a block (whose textarea has its own
+   flex: none, see below) only made the squeeze on everything else worse. */
+.md-live-block {
+  cursor: text;
+  flex: none;
+}
+
+.md-live-block:hover {
+  background: rgba(0, 255, 136, 0.06);
+}
+
+/* Scoped as "#md-live .md-live-editor" (not just ".md-live-editor")
+   deliberately: this textarea is also matched by the ".pane textarea"
+   rule (specificity 0,1,1), which beats a bare class selector (0,1,0)
+   and would otherwise win for every shared property (padding, border,
+   flex, …). The #id-qualified selector here outranks it. flex: none
+   overrides ".pane textarea"'s flex: 1 — without it, the textarea
+   stretches to fill the flex column's cross axis and the auto-grow
+   height calculation (based on scrollHeight) never shrinks to fit
+   its actual (usually one-block-sized) content.                       */
+#md-live .md-live-editor {
+  display: block;
+  flex: none;
+  width: 100%;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  border: 1px dashed var(--accent);
+  border-radius: 3px;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  padding: 1px 3px;
+  margin: -1px -3px;
+}
+
+.md-h1, .md-h2, .md-h3, .md-h4, .md-h5, .md-h6 {
+  color: var(--accent);
+  margin: 0.6em 0 0.3em;
+}
+.md-h1 { font-size: 1.5em; border-bottom: 1px solid var(--border); padding-bottom: 0.2em; }
+.md-h2 { font-size: 1.3em; border-bottom: 1px solid var(--border); padding-bottom: 0.15em; }
+.md-h3 { font-size: 1.15em; }
+.md-h4 { font-size: 1.05em; }
+.md-h5, .md-h6 { font-size: 1em; color: var(--text-dim); }
+
+.md-p {
+  margin: 0.5em 0;
+  white-space: pre-wrap;
+}
+
+.md-strong { font-weight: 700; }
+.md-em { font-style: italic; }
+.md-strike { text-decoration: line-through; color: var(--text-dim); }
+
+.md-code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 0.9em;
+}
+
+.md-link {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.md-img { max-width: 100%; }
+
+.md-blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 0.9em;
+  color: var(--text-dim);
+  font-style: italic;
+  margin: 0.5em 0;
+  white-space: pre-wrap;
+}
+
+.md-hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1em 0;
+}
+
+.md-ul, .md-ol {
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+.md-li { margin: 0.15em 0; }
+.md-task-item {
+  list-style: none;
+  margin-left: -1.5em;
+}
+.md-task-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5em;
+  cursor: pointer;
+}
+.md-task-checkbox {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.md-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+}
+.md-th, .md-td {
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  text-align: left;
+}
+.md-th { background: var(--bg); }
+
+.md-pre, .md-code-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.md-pre {
+  padding: 0.5em 0.7em;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+.md-code-block {
+  font-family: var(--font);
+}
+
+.md-blank {
+  min-height: 1.65em; /* matches .pane textarea line-height so blank lines
+                          stay clickable and don't cause a layout jump */
+}
+
+.md-live-new-entry {
+  min-height: 1.65em;
+  margin-top: 0.4em;
+  color: var(--text-dim);
+  font-style: italic;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.md-live-new-entry:hover {
+  opacity: 1;
+}
+
 /* ── Modal ───────────────────────────────────────────── */
 
 .modal {

@@ -958,9 +958,13 @@
     initHowToPlay();
 
     document.getElementById("hint-btn").addEventListener("click", revealHint);
-    document.getElementById("prev-day-btn").addEventListener("click", () => navToDay(dayOffset - 1));
-    document.getElementById("today-day-btn").addEventListener("click", () => navToDay(0));
-    document.getElementById("next-day-btn").addEventListener("click", () => navToDay(dayOffset + 1));
+    /* Blur after navigating: these buttons stay focused after a mouse
+       click, so a subsequent physical Enter (submitting a guess) would
+       also re-fire the button's native click activation and silently
+       navigate away mid-game — see day-nav focus-steal bug.           */
+    document.getElementById("prev-day-btn").addEventListener("click", (e) => { navToDay(dayOffset - 1); e.currentTarget.blur(); });
+    document.getElementById("today-day-btn").addEventListener("click", (e) => { navToDay(0); e.currentTarget.blur(); });
+    document.getElementById("next-day-btn").addEventListener("click", (e) => { navToDay(dayOffset + 1); e.currentTarget.blur(); });
 
     document.getElementById("stats-btn").addEventListener("click", openStats);
     document.getElementById("stats-close").addEventListener("click", closeStats);

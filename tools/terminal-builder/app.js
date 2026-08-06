@@ -386,7 +386,7 @@
     code: DEMO_CODE,
     formatOutput: true,
     fontSize: 13,
-    shadow: true,
+    shadow: false,
     wrap: false,
     dotsAlign: "left",
   };

@@ -198,6 +198,10 @@
 
   // ── Inline transforms ─────────────────────────────────────────────────────
 
+  // Keep this regex cascade's order in sync with liveInlineToHtml() below —
+  // it's a parallel renderer for the Live input view (class-based, no
+  // per-export-theme styling) and deliberately duplicates this one rather
+  // than sharing a token pass, to avoid risking this (tested) export path.
   function inlineToHtml(text, th) {
     // 1. Extract and protect inline code spans
     const codes = [];
@@ -239,6 +243,42 @@
       (_, c) => `<del style="${styleStr(th.del)}">${c}</del>`);
 
     // 9. Restore inline code spans
+    text = text.replace(/\x00C(\d+)\x00/g, (_, i) => codes[+i]);
+
+    return text;
+  }
+
+  /* Live-view counterpart to inlineToHtml() above — same cascade, but
+     emits class="md-…" for the tool's own terminal-dark theme instead of
+     per-export-theme style="…" attributes. See the comment on
+     inlineToHtml() for why this isn't a shared token pass.             */
+  function liveInlineToHtml(text) {
+    const codes = [];
+    text = text.replace(/`([^`]+)`/g, (_, c) => {
+      const idx = codes.length;
+      codes.push(`<code class="md-code">${escapeHtml(c)}</code>`);
+      return `\x00C${idx}\x00`;
+    });
+
+    text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
+      (_, alt, src) => `<img class="md-img" src="${src}" alt="${alt}">`);
+
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
+      (_, label, href) => `<a class="md-link" href="${href}">${label}</a>`);
+
+    text = text.replace(/\*\*\*(.+?)\*\*\*/g,
+      (_, c) => `<strong class="md-strong"><em class="md-em">${c}</em></strong>`);
+
+    text = text.replace(/\*\*(.+?)\*\*/g, (_, c) => `<strong class="md-strong">${c}</strong>`);
+    text = text.replace(/__(.+?)__/g, (_, c) => `<strong class="md-strong">${c}</strong>`);
+
+    text = text.replace(/\*(.+?)\*/g, (_, c) => `<em class="md-em">${c}</em>`);
+    text = text.replace(/_(.+?)_/g, (_, c) => `<em class="md-em">${c}</em>`);
+
+    text = text.replace(/~~(.+?)~~/g, (_, c) => `<del class="md-strike">${c}</del>`);
+
     text = text.replace(/\x00C(\d+)\x00/g, (_, i) => codes[+i]);
 
     return text;
@@ -327,6 +367,27 @@
 
   // ── Block renderers ───────────────────────────────────────────────────────
 
+  // GFM task list marker: "[ ] " or "[x] " at the start of an item.
+  const TASK_RE = /^\[([ xX])\]\s+(.*)/;
+
+  /* Renders the opening "<li ...>...content..." for one list item —
+     everything up to (but not including) the closing </li>, so callers
+     can splice in a nested child list before closing the tag. Task
+     items get list-style:none plus a negative margin equal to the
+     list's own indent, pulling the checkbox flush to where the
+     bullet/number would have sat instead of leaving it awkwardly
+     indented past it.                                                  */
+  function renderListItem(content, th, listStyle) {
+    const m = content.match(TASK_RE);
+    if (!m) {
+      return `<li style="${styleStr(th.li)}">${inlineToHtml(content, th)}`;
+    }
+    const checked = m[1] !== " ";
+    const body    = inlineToHtml(m[2], th);
+    const liStyle = `${styleStr(th.li)}; list-style: none; margin-left: -${listStyle.paddingLeft}`;
+    return `<li style="${liStyle}"><label style="display:inline-flex;align-items:baseline;gap:0.5em;cursor:default"><input type="checkbox" disabled${checked ? " checked" : ""}><span>${body}</span></label>`;
+  }
+
   function renderList(lines, isOrdered, th) {
     const items = [];
 
@@ -352,7 +413,7 @@
     let html        = `<${tag} style="${styleStr(listStyle)}">`;
 
     for (const item of items) {
-      html += `<li style="${styleStr(th.li)}">${inlineToHtml(item.content, th)}`;
+      html += renderListItem(item.content, th, listStyle);
 
       if (item.children.length > 0) {
         const cOl    = item.children[0].childOl;
@@ -360,7 +421,7 @@
         const cStyle = cOl ? th.ol : th.ul;
         html += `<${cTag} style="${styleStr(cStyle)}">`;
         for (const child of item.children) {
-          html += `<li style="${styleStr(th.li)}">${inlineToHtml(child.content, th)}</li>`;
+          html += renderListItem(child.content, th, cStyle) + `</li>`;
         }
         html += `</${cTag}>`;
       }
@@ -406,9 +467,30 @@
 
   // ── Block-level parser ────────────────────────────────────────────────────
 
-  function parseBlocks(text, th) {
-    const lines = text.replace(/\r\n/g, "\n").split("\n");
-    const parts = [];
+  /* Pure block-boundary scanner — same branch order/regexes as the block
+     parser below, but returns raw-source descriptors instead of HTML.
+     Blank lines are preserved as their own {type:"blank"} block (one per
+     line) rather than being skipped, so callers that need an exact
+     round-trip of the original text (the Live input view) can reassemble
+     it via blocks.map(b => b.raw).join("\n"). blockToStyledHtml()/
+     parseBlocks() below filter blanks back out to keep today's output
+     behaviour unchanged.                                                */
+  function scanBlocks(text) {
+    // A single trailing newline (how virtually all real text/files end)
+    // otherwise produces one extra "" element from split("\n") — read as
+    // a genuine trailing blank-line block. That's invisible in the HTML
+    // export (blockToStyledHtml/parseBlocks filter blank blocks out
+    // regardless), but the Live view renders every block, including
+    // blanks, as a real clickable element — so a normally-terminated
+    // document got a phantom trailing blank strip, which then stacked
+    // with the "add a new line" placeholder into a doubled blank line
+    // whenever it was used. Stripping exactly one trailing newline before
+    // splitting removes that phantom while still preserving a real one
+    // for text that intentionally ends in a blank line (i.e. two
+    // trailing newlines).
+    const normalized = text.replace(/\r\n/g, "\n");
+    const lines = (normalized.endsWith("\n") ? normalized.slice(0, -1) : normalized).split("\n");
+    const blocks = [];
     let i = 0;
 
     while (i < lines.length) {
@@ -416,94 +498,72 @@
 
       // ── Fenced code block
       if (/^```/.test(line)) {
-        const lang = (line.match(/^```(\w+)/) || [])[1] || "";
-        const codeLines = [];
+        const start = i;
         i++;
-        while (i < lines.length && !/^```\s*$/.test(lines[i])) {
-          codeLines.push(lines[i]);
-          i++;
-        }
-        i++; // skip closing ```
-        const codeContent = highlightCode(codeLines.join("\n"), lang.toLowerCase(), th.syntax);
-        parts.push(
-          `<pre style="${styleStr(th.pre)}"><code style="background:none;padding:0;border-radius:0;font-size:1em;font-family:inherit">${codeContent}</code></pre>`
-        );
+        while (i < lines.length && !/^```\s*$/.test(lines[i])) i++;
+        if (i < lines.length) i++; // skip closing ``` (only if one exists)
+        blocks.push({ type: "code", raw: lines.slice(start, i).join("\n") });
         continue;
       }
 
       // ── ATX Heading
       const hM = line.match(/^(#{1,6})\s+(.*)/);
       if (hM) {
-        const lvl      = hM[1].length;
-        const tag      = `h${lvl}`;
-        const hStyle   = th[tag] || th.h6;
-        parts.push(`<${tag} style="${styleStr(hStyle)}">${inlineToHtml(hM[2], th)}</${tag}>`);
+        blocks.push({ type: "heading", raw: line, level: hM[1].length, content: hM[2] });
         i++;
         continue;
       }
 
       // ── Horizontal rule  (--- *** ___ or spaced variants)
       if (/^(- ?){3,}$|^(\* ?){3,}$|^(_ ?){3,}$/.test(line.trim()) && line.trim().length >= 3) {
-        parts.push(`<hr style="${styleStr(th.hr)}">`);
+        blocks.push({ type: "hr", raw: line });
         i++;
         continue;
       }
 
       // ── Blockquote
       if (/^>\s?/.test(line)) {
-        const bqLines = [];
-        while (i < lines.length && /^>\s?/.test(lines[i])) {
-          bqLines.push(lines[i].replace(/^>\s?/, ""));
-          i++;
-        }
-        const inner = parseBlocks(bqLines.join("\n"), th);
-        parts.push(`<blockquote style="${styleStr(th.blockquote)}">${inner}</blockquote>`);
+        const start = i;
+        while (i < lines.length && /^>\s?/.test(lines[i])) i++;
+        blocks.push({ type: "blockquote", raw: lines.slice(start, i).join("\n") });
         continue;
       }
 
       // ── Table  (header row followed by |---|---| separator)
       if (/^\|/.test(line) && i + 1 < lines.length && /^\|[-:| ]+\|/.test(lines[i + 1])) {
-        const tLines = [];
-        while (i < lines.length && /^\|/.test(lines[i])) {
-          tLines.push(lines[i]);
-          i++;
-        }
-        parts.push(renderTable(tLines, th));
+        const start = i;
+        while (i < lines.length && /^\|/.test(lines[i])) i++;
+        blocks.push({ type: "table", raw: lines.slice(start, i).join("\n") });
         continue;
       }
 
       // ── Unordered list
       if (/^(\s*)[-*+]\s+/.test(line)) {
-        const lLines = [];
+        const start = i;
         while (
           i < lines.length &&
           lines[i].trim() !== "" &&
           (/^\s*[-*+]\s+/.test(lines[i]) || /^\s*\d+\.\s+/.test(lines[i]))
-        ) {
-          lLines.push(lines[i]);
-          i++;
-        }
-        parts.push(renderList(lLines, false, th));
+        ) i++;
+        blocks.push({ type: "ul", raw: lines.slice(start, i).join("\n") });
         continue;
       }
 
       // ── Ordered list
       if (/^(\s*)\d+\.\s+/.test(line)) {
-        const lLines = [];
+        const start = i;
         while (
           i < lines.length &&
           lines[i].trim() !== "" &&
           (/^\s*\d+\.\s+/.test(lines[i]) || /^\s*[-*+]\s+/.test(lines[i]))
-        ) {
-          lLines.push(lines[i]);
-          i++;
-        }
-        parts.push(renderList(lLines, true, th));
+        ) i++;
+        blocks.push({ type: "ol", raw: lines.slice(start, i).join("\n") });
         continue;
       }
 
       // ── Blank line
       if (line.trim() === "") {
+        blocks.push({ type: "blank", raw: "" });
         i++;
         continue;
       }
@@ -513,8 +573,7 @@
       // above is just prose (stray pipe) — include it in the paragraph rather
       // than excluding it, which previously caused an infinite loop because
       // nothing would advance `i`.
-      const pLines = [];
-      const paraStart = i;
+      const start = i;
       while (
         i < lines.length &&
         lines[i].trim() !== "" &&
@@ -527,19 +586,59 @@
       ) {
         // Bail if the line looks like a valid table header (with separator
         // on next line) — let the outer loop re-enter the table branch.
-        if (i > paraStart && /^\|/.test(lines[i]) && i + 1 < lines.length &&
+        if (i > start && /^\|/.test(lines[i]) && i + 1 < lines.length &&
             /^\|[-:| ]+\|/.test(lines[i + 1])) {
           break;
         }
-        pLines.push(lines[i]);
         i++;
       }
-      if (pLines.length > 0) {
-        parts.push(`<p style="${styleStr(th.p)}">${inlineToHtml(pLines.join("\n"), th)}</p>`);
+      if (i > start) {
+        blocks.push({ type: "paragraph", raw: lines.slice(start, i).join("\n") });
       }
     }
 
-    return parts.join("\n");
+    return blocks;
+  }
+
+  function blockToStyledHtml(block, th) {
+    switch (block.type) {
+      case "code": {
+        const bLines = block.raw.split("\n");
+        const lang = (bLines[0].match(/^```(\w+)/) || [])[1] || "";
+        const hasClose = bLines.length > 1 && /^```\s*$/.test(bLines[bLines.length - 1]);
+        const codeLines = bLines.slice(1, hasClose ? -1 : undefined);
+        const codeContent = highlightCode(codeLines.join("\n"), lang.toLowerCase(), th.syntax);
+        return `<pre style="${styleStr(th.pre)}"><code style="background:none;padding:0;border-radius:0;font-size:1em;font-family:inherit">${codeContent}</code></pre>`;
+      }
+      case "heading": {
+        const tag = `h${block.level}`;
+        const hStyle = th[tag] || th.h6;
+        return `<${tag} style="${styleStr(hStyle)}">${inlineToHtml(block.content, th)}</${tag}>`;
+      }
+      case "hr":
+        return `<hr style="${styleStr(th.hr)}">`;
+      case "blockquote": {
+        const inner = block.raw.split("\n").map(l => l.replace(/^>\s?/, "")).join("\n");
+        return `<blockquote style="${styleStr(th.blockquote)}">${parseBlocks(inner, th)}</blockquote>`;
+      }
+      case "table":
+        return renderTable(block.raw.split("\n"), th);
+      case "ul":
+        return renderList(block.raw.split("\n"), false, th);
+      case "ol":
+        return renderList(block.raw.split("\n"), true, th);
+      case "paragraph":
+        return `<p style="${styleStr(th.p)}">${inlineToHtml(block.raw, th)}</p>`;
+      default: // "blank" never reaches here — filtered out in parseBlocks()
+        return "";
+    }
+  }
+
+  function parseBlocks(text, th) {
+    return scanBlocks(text)
+      .filter(b => b.type !== "blank")
+      .map(b => blockToStyledHtml(b, th))
+      .join("\n");
   }
 
   // ── Full document builder ─────────────────────────────────────────────────
@@ -599,7 +698,398 @@
     document.getElementById("pane-html").classList.add("view-" + mode);
     document.getElementById("html-view-mode").value = mode;
     safeStorage.save(HTML_VIEW_MODE_KEY, mode);
+    if (mode !== "both") {
+      // The output-resizer drag (applyOutputSplit) sets an inline flex on
+      // these two elements that overrides the view-raw/view-preview
+      // stylesheet rule (flex: 1), leaving whichever pane is shown at its
+      // last "both"-mode split size with a blank gap below it. Clear the
+      // inline override so the CSS class rule takes over again.
+      document.getElementById("html-preview").style.flex = "";
+      document.getElementById("html-output").style.flex = "";
+    }
     updatePreview();
+  }
+
+  // ── Markdown input view mode (code / live) ──────────────────────────────
+
+  // GFM task list marker matched against a whole raw source LINE (still
+  // including its leading indent + bullet/number), unlike TASK_RE above
+  // which matches already-bullet-stripped list-item content. Used to flip
+  // a checkbox's [ ]/[x] in place in the Live view without re-parsing the
+  // rest of the line. Covers both unordered and ordered task items, since
+  // renderListItem() (via TASK_RE) already supports both today.
+  const TASK_LINE_RE = /^(\s*(?:[-*+]|\d+\.)\s+)\[([ xX])\]/;
+
+  const MD_VIEW_MODE_KEY = "mdToHtmlInputViewMode";
+  let mdViewMode = "code";
+  let liveBlocks = [];
+  let activeBlockIndex = -1;
+  // Nonzero only while the active block came from the phantom "click to
+  // add a new entry" placeholder (see activateNewEntry): counts how many
+  // liveBlocks entries it pushed (1 for the new content slot, plus 1 more
+  // if a blank separator was also inserted to keep it from merging into
+  // the previous block). Lets deactivateActiveBlock() pop all of them
+  // again if the user activated it but typed nothing, instead of
+  // committing a stray blank line/paragraph break.
+  let activeNewEntryPushCount = 0;
+  // See onMdLiveMousedown / the active textarea's "blur" listener: set
+  // for exactly one blur to survive a right-click's own focus-stealing
+  // side effect without tearing the block down before "contextmenu" fires.
+  let suppressNextLiveBlur = false;
+
+  function applyMdViewMode(mode) {
+    mdViewMode = mode;
+    const pane = document.getElementById("pane-md");
+    pane.classList.remove("view-code", "view-live");
+    pane.classList.add("view-" + mode);
+    document.getElementById("md-view-mode").value = mode;
+    safeStorage.save(MD_VIEW_MODE_KEY, mode);
+    if (mode === "live") renderLiveView();
+  }
+
+  /* Rebuilds #md-input.value from the current liveBlocks array and runs
+     it through the exact same persistence/stats/convert pipeline as the
+     Code-view textarea's own "input" listener, so Live-view edits are
+     indistinguishable downstream from typing directly into #md-input.   */
+  function syncMdInputFromLiveBlocks() {
+    const joined = liveBlocks.map(b => b.raw).join("\n");
+    document.getElementById("md-input").value = joined;
+    safeStorage.save("mdToHtmlContent", joined);
+    updateStats();
+    scheduleConvert();
+  }
+
+  /* Full rebuild of the Live view from #md-input's current value. Always
+     a full rescan (never an incremental patch) — block boundaries can
+     shift on any edit (e.g. a typed blank line splits one paragraph into
+     two), so re-deriving from source is simpler and more robust than
+     trying to track that incrementally.                                */
+  function renderLiveView() {
+    const text = document.getElementById("md-input").value;
+    liveBlocks = scanBlocks(text);
+    activeBlockIndex = -1;
+    document.getElementById("md-live").innerHTML =
+      liveBlocks.map(renderStaticBlockHtml).join("") + renderNewEntryPlaceholder();
+  }
+
+  /* A permanent, always-present clickable strip after the last real
+     block — so starting a new paragraph/list/heading at the end of the
+     document is a single click, not "activate the last block, press End,
+     press Enter twice, click away." It isn't one of liveBlocks; it only
+     becomes a real block (via activateNewEntry) once actually clicked. */
+  function renderNewEntryPlaceholder() {
+    return `<div class="md-live-block md-live-new-entry" data-block-index="new">Click to add a new line…</div>`;
+  }
+
+  function renderStaticBlockHtml(block, idx) {
+    switch (block.type) {
+      case "heading":
+        return `<h${block.level} class="md-live-block md-h${block.level}" data-block-index="${idx}">${liveInlineToHtml(block.content)}</h${block.level}>`;
+      case "hr":
+        return `<hr class="md-live-block md-hr" data-block-index="${idx}">`;
+      case "blank":
+        return `<div class="md-live-block md-blank" data-block-index="${idx}"></div>`;
+      case "code":
+        return renderStaticCodeHtml(block.raw, idx);
+      case "blockquote":
+        return renderStaticBlockquoteHtml(block.raw, idx);
+      case "table":
+        return renderStaticTableHtml(block.raw, idx);
+      case "ul":
+        return renderStaticListHtml(block.raw, false, idx);
+      case "ol":
+        return renderStaticListHtml(block.raw, true, idx);
+      default: // "paragraph"
+        return `<p class="md-live-block md-p" data-block-index="${idx}">${liveInlineToHtml(block.raw)}</p>`;
+    }
+  }
+
+  // No syntax highlighting in the Live view (scope decision — highlightCode
+  // is keyed to an export theme's syntax palette, which the Live view is
+  // deliberately decoupled from); plain monospace text is enough for an
+  // editable block.
+  function renderStaticCodeHtml(raw, idx) {
+    const lines = raw.split("\n");
+    const hasClose = lines.length > 1 && /^```\s*$/.test(lines[lines.length - 1]);
+    const codeLines = lines.slice(1, hasClose ? -1 : undefined);
+    return `<pre class="md-live-block md-pre" data-block-index="${idx}"><code class="md-code-block">${escapeHtml(codeLines.join("\n"))}</code></pre>`;
+  }
+
+  // Flattened, not recursively parsed like blockToStyledHtml's blockquote
+  // case — the whole blockquote is one atomic edit block in Live view.
+  function renderStaticBlockquoteHtml(raw, idx) {
+    const inner = raw.split("\n").map(l => l.replace(/^>\s?/, "")).join("\n");
+    return `<blockquote class="md-live-block md-blockquote" data-block-index="${idx}">${liveInlineToHtml(inner)}</blockquote>`;
+  }
+
+  function renderStaticTableHtml(raw, idx) {
+    const rows = raw.split("\n").filter((_, i) => i !== 1)
+      .map(l => l.split("|").slice(1, -1).map(c => c.trim()));
+    if (!rows.length) return `<div class="md-live-block" data-block-index="${idx}"></div>`;
+    let html = `<table class="md-live-block md-table" data-block-index="${idx}"><thead><tr>`;
+    html += rows[0].map(c => `<th class="md-th">${liveInlineToHtml(c)}</th>`).join("");
+    html += "</tr></thead>";
+    if (rows.length > 1) {
+      html += "<tbody>" + rows.slice(1).map(row =>
+        "<tr>" + row.map(c => `<td class="md-td">${liveInlineToHtml(c)}</td>`).join("") + "</tr>"
+      ).join("") + "</tbody>";
+    }
+    return html + "</table>";
+  }
+
+  function renderStaticListItem(content, lineNo) {
+    const m = content.match(TASK_RE);
+    if (!m) return `<li class="md-li">${liveInlineToHtml(content)}`;
+    const checked = m[1] !== " ";
+    return `<li class="md-li md-task-item"><label class="md-task-label"><input type="checkbox" class="md-task-checkbox" data-md-line="${lineNo}"${checked ? " checked" : ""}><span>${liveInlineToHtml(m[2])}</span></label>`;
+  }
+
+  function renderStaticListHtml(raw, isOrderedTopLevel, idx) {
+    const items = [];
+    raw.split("\n").forEach((line, lineNo) => {
+      const ulM = line.match(/^(\s*)[-*+]\s+(.*)/);
+      const olM = line.match(/^(\s*)\d+\.\s+(.*)/);
+      const m = ulM || olM;
+      if (!m) return;
+      const indent = m[1].length, content = m[2], childOl = !!olM;
+      if (indent < 2) {
+        items.push({ content, lineNo, childOl: false, children: [] });
+      } else if (items.length > 0) {
+        items[items.length - 1].children.push({ content, lineNo, childOl });
+      }
+    });
+
+    const tag = isOrderedTopLevel ? "ol" : "ul";
+    let html = `<${tag} class="md-live-block md-${tag}" data-block-index="${idx}">`;
+    for (const item of items) {
+      html += renderStaticListItem(item.content, item.lineNo);
+      if (item.children.length > 0) {
+        const cTag = item.children[0].childOl ? "ol" : "ul";
+        html += `<${cTag} class="md-${cTag}">` +
+          item.children.map(c => renderStaticListItem(c.content, c.lineNo) + "</li>").join("") +
+          `</${cTag}>`;
+      }
+      html += "</li>";
+    }
+    return html + `</${tag}>`;
+  }
+
+  /* Checkboxes only ever appear inside STATIC (inactive) blocks — an
+     active block is always shown as a plain-text <textarea>, never as
+     rendered HTML with a live checkbox widget — so a checkbox click can
+     never belong to the block currently being edited. Flipping [ ]/[x]
+     never changes line count or block type, so only that one block's
+     HTML needs to be regenerated in place; no full rebuild needed.      */
+  function toggleTaskCheckbox(checkboxEl) {
+    const blockEl = checkboxEl.closest(".md-live-block");
+    const idx = +blockEl.dataset.blockIndex;
+    const lineIdx = +checkboxEl.dataset.mdLine;
+    const rawLines = liveBlocks[idx].raw.split("\n");
+    rawLines[lineIdx] = rawLines[lineIdx].replace(TASK_LINE_RE,
+      (m, prefix, mark) => prefix + "[" + (mark === " " ? "x" : " ") + "]");
+    liveBlocks[idx].raw = rawLines.join("\n");
+    syncMdInputFromLiveBlocks();
+    blockEl.outerHTML = renderStaticBlockHtml(liveBlocks[idx], idx);
+  }
+
+  function autoGrowLiveEditor(ta) {
+    ta.style.height = "auto";
+    ta.style.height = ta.scrollHeight + "px";
+  }
+
+  /* Commits the active block's textarea value back into liveBlocks/
+     #md-input, then fully rebuilds the Live view. activeBlockIndex is
+     reset to -1 as the FIRST statement, before any DOM mutation:
+     removing a focused element from the DOM fires "blur" as a side
+     effect of the removal itself, and that reentrant blur must see
+     activeBlockIndex already cleared or it would double-commit.        */
+  function deactivateActiveBlock() {
+    if (activeBlockIndex < 0) return;
+    const idx = activeBlockIndex;
+    const ta = document.querySelector(".md-live-editor");
+    const text = ta ? ta.value : liveBlocks[idx].raw;
+    const pushCount = activeNewEntryPushCount;
+    activeBlockIndex = -1;
+    activeNewEntryPushCount = 0;
+    if (pushCount > 0 && text === "") {
+      // Clicked "add a new line" but typed nothing — drop everything
+      // activateNewEntry() pushed for it (the content slot, and its
+      // separating blank line if one was added) rather than leaving a
+      // stray blank line/paragraph break just from clicking in and back
+      // out again.
+      for (let i = 0; i < pushCount; i++) liveBlocks.pop();
+    } else {
+      liveBlocks[idx].raw = text;
+    }
+    syncMdInputFromLiveBlocks();
+    renderLiveView();
+  }
+
+  /* Swaps `el` (block `idx`'s static node) for a real <textarea> seeded
+     with its raw source, and places the caret at an approximate line
+     based on click Y-position ÷ line-height — a deliberate approximation,
+     not character-exact (true click-to-caret mapping between rendered
+     HTML and raw markdown is effectively a source map and isn't worth it
+     here). Shared by activateBlockAtIndex (existing blocks) and
+     activateNewEntry (the trailing "add a new line" placeholder).      */
+  function mountLiveEditor(el, idx, clientY) {
+    const rect = el.getBoundingClientRect();
+    const block = liveBlocks[idx];
+    const ta = document.createElement("textarea");
+    ta.className = "md-live-editor";
+    ta.spellcheck = false;
+    ta.value = block.raw;
+    el.replaceWith(ta);
+    activeBlockIndex = idx;
+    autoGrowLiveEditor(ta);
+    ta.focus();
+
+    const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 20;
+    const lineIdx = Math.max(0, Math.floor((clientY - rect.top) / lineHeight));
+    const lines = ta.value.split("\n");
+    let pos = 0;
+    for (let i = 0; i < Math.min(lineIdx, lines.length - 1); i++) pos += lines[i].length + 1;
+    pos = Math.min(pos, ta.value.length);
+    ta.setSelectionRange(pos, pos);
+
+    ta.addEventListener("input", () => {
+      liveBlocks[idx].raw = ta.value;
+      syncMdInputFromLiveBlocks();
+      autoGrowLiveEditor(ta);
+    });
+    ta.addEventListener("blur", () => {
+      if (activeBlockIndex !== idx) return;
+      // Right-clicking this textarea blurs it to <body> as part of
+      // Chromium's own handling of the mousedown, before "contextmenu"
+      // even fires -- observed directly, and not something
+      // preventDefault() on the mousedown suppresses. onMdLiveMousedown
+      // sets this flag for exactly that one blur so the block survives
+      // (still in the DOM, just not focused) long enough for the
+      // following "contextmenu" handler to find it and open the menu.
+      if (suppressNextLiveBlur) { suppressNextLiveBlur = false; return; }
+      // showCtxMenu() explicitly focuses its first row for keyboard
+      // navigation the moment the context menu opens -- that alone would
+      // blur this textarea and tear the block down (via
+      // deactivateActiveBlock()'s commit + full rebuild) before the user
+      // has even chosen a menu action, let alone before execCtxAction()
+      // gets to run against it. document.activeElement already reflects
+      // the newly-focused element by the time "blur" fires, so checking
+      // whether focus landed inside the menu distinguishes "opened the
+      // menu on this block" from a real "clicked/tabbed away" blur --
+      // only the latter should commit and rebuild.
+      if (document.getElementById("ctx-menu").contains(document.activeElement)) return;
+      deactivateActiveBlock();
+    });
+    ta.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { e.preventDefault(); ta.blur(); }
+    });
+  }
+
+  function activateBlockAtIndex(idx, clientY) {
+    const el = document.querySelector(`.md-live-block[data-block-index="${idx}"]`);
+    if (!el) return;
+    activeNewEntryPushCount = 0;
+    mountLiveEditor(el, idx, clientY);
+  }
+
+  /* Turns the trailing "click to add a new line" placeholder into a real
+     (initially empty) block and activates it. Appends to the *current*
+     liveBlocks array, so callers must do this after any prior block's
+     deactivation-triggered rebuild has already run — never derive the
+     new index from a pre-rebuild block count.
+
+     Separates the new entry from whatever currently comes last with a
+     blank line first, unless the document is empty or already ends with
+     one — otherwise joining raw blocks with a single "\n" would silently
+     continue the previous paragraph instead of starting a new block, the
+     opposite of what "add a new line" implies.                          */
+  function activateNewEntry(clientY) {
+    const el = document.querySelector(".md-live-new-entry");
+    if (!el) return;
+    activeNewEntryPushCount = 0;
+    const last = liveBlocks[liveBlocks.length - 1];
+    if (last && last.type !== "blank") {
+      liveBlocks.push({ type: "blank", raw: "" });
+      activeNewEntryPushCount++;
+    }
+    liveBlocks.push({ type: "blank", raw: "" });
+    activeNewEntryPushCount++;
+    mountLiveEditor(el, liveBlocks.length - 1, clientY);
+  }
+
+  /* Block switching is driven from "mousedown" (with preventDefault), not
+     from native "blur"/"click" ordering. Clicking a different block while
+     one is active fires native blur — possibly destroying/replacing DOM —
+     BEFORE the target block's own "click" event, which can silently no-op
+     the switch. preventDefault() on mousedown suppresses that native focus
+     shift entirely so this handler drives commit → rebuild → activate
+     itself, synchronously, with no race.                                  */
+  function onMdLiveMousedown(e) {
+    // Right-clicks (and middle-clicks) must not run the block-switch
+    // logic below -- otherwise a right-click on a different (static)
+    // block would switch the active block before "contextmenu" fires,
+    // silently swapping which block the menu ends up targeting. But a
+    // right-click mousedown lands here can still blur a focused
+    // .md-live-editor to <body> before "contextmenu" fires (observed in
+    // Chromium, and not something preventDefault() on this mousedown
+    // actually stops), which would tear the block down
+    // (deactivateActiveBlock's commit + rebuild) before the menu ever
+    // opens on it -- flag it so the textarea's own "blur" listener skips
+    // deactivating for that one, specific blur, without treating this as
+    // a left-click switch.
+    if (e.button !== 0) {
+      if (e.target.closest(".md-live-editor")) {
+        e.preventDefault();
+        suppressNextLiveBlur = true;
+      }
+      return;
+    }
+
+    if (e.target.classList.contains("md-task-checkbox")) {
+      e.preventDefault();
+      toggleTaskCheckbox(e.target);
+      return;
+    }
+
+    const blockEl = e.target.closest(".md-live-block");
+    if (!blockEl) return;
+
+    // The trailing "add a new line" placeholder isn't one of liveBlocks
+    // and has no meaningful numeric index yet (activateNewEntry appends
+    // one), so it's handled separately from the existing-block index
+    // arithmetic below — including bypassing the "already active" check,
+    // since this placeholder is only ever in the DOM while NOT active
+    // (activating it replaces it with a .md-live-editor, same as any
+    // other block).
+    const isNewEntry = blockEl.classList.contains("md-live-new-entry");
+    const clickedIdx = isNewEntry ? -1 : +blockEl.dataset.blockIndex;
+    if (!isNewEntry && clickedIdx === activeBlockIndex) return; // let native caret placement happen
+
+    e.preventDefault();
+    const clientY = e.clientY;
+
+    if (activeBlockIndex < 0) {
+      if (isNewEntry) activateNewEntry(clientY);
+      else activateBlockAtIndex(clickedIdx, clientY);
+      return;
+    }
+
+    // Deactivating the current block triggers a full rebuild, which can
+    // shift every later block's index (a blank line split/merged during
+    // the edit). Blocks before the edited one are provably untouched;
+    // blocks after it shift by however many blocks were gained/lost.
+    const editedIdx = activeBlockIndex;
+    const beforeCount = liveBlocks.length;
+    deactivateActiveBlock();
+
+    if (isNewEntry) {
+      activateNewEntry(clientY);
+      return;
+    }
+
+    const delta = liveBlocks.length - beforeCount;
+    const targetIdx = clickedIdx < editedIdx ? clickedIdx : clickedIdx + delta;
+    activateBlockAtIndex(Math.max(0, Math.min(liveBlocks.length - 1, targetIdx)), clientY);
   }
 
   // Debounced preview update for the input handler — avoids re-parsing the
@@ -721,6 +1211,7 @@
       document.getElementById("md-input").value = ev.target.result;
       safeStorage.save("mdToHtmlContent", ev.target.result);
       convert();
+      if (mdViewMode === "live") renderLiveView();
     };
     reader.readAsText(file);
     e.target.value = ""; // allow re-uploading the same file
@@ -1145,8 +1636,44 @@
 
   // ── Text manipulation helpers ───────────────────────────────────────────
 
+  /* The context menu's formatting/clipboard actions need to operate on
+     whichever textarea is actually editable right now: #md-input in Code
+     view, or the currently active block's textarea in Live view. Every
+     helper below resolves its target through this instead of hardcoding
+     #md-input, so the same menu (and the same ctxState captured at
+     right-click time) works unmodified in both views.                   */
+  function getEditableTextarea() {
+    if (mdViewMode === "live" && activeBlockIndex >= 0) {
+      const liveTa = document.querySelector(".md-live-editor");
+      if (liveTa) return liveTa;
+    }
+    return document.getElementById("md-input");
+  }
+
+  /* Programmatically setting ta.value (as every helper below does) never
+     fires a native "input" event, so when ta is a Live-view block editor
+     the usual keystroke-driven sync (liveBlocks[idx].raw -> #md-input ->
+     convert) never runs on its own. Call this after mutating ta.value
+     instead of convert() directly -- it folds the live block's new text
+     back into liveBlocks/#md-input first (a no-op in Code view, where ta
+     already *is* #md-input), then converts, and re-runs the auto-grow
+     sizing since the content just changed without an input event to
+     trigger it.                                                        */
+  function commitEditableTextarea(ta) {
+    const mdInput = document.getElementById("md-input");
+    if (ta !== mdInput && activeBlockIndex >= 0) {
+      liveBlocks[activeBlockIndex].raw = ta.value;
+      const joined = liveBlocks.map(b => b.raw).join("\n");
+      mdInput.value = joined;
+      safeStorage.save("mdToHtmlContent", joined);
+      updateStats();
+      autoGrowLiveEditor(ta);
+    }
+    convert();
+  }
+
   function replaceSelection(before, after, defaultText) {
-    const ta = document.getElementById("md-input");
+    const ta = getEditableTextarea();
     const s = ctxState.start;
     const e = ctxState.end;
     const val = ta.value;
@@ -1159,11 +1686,11 @@
     } else {
       ta.setSelectionRange(s + before.length, s + before.length + insert.length);
     }
-    convert();
+    commitEditableTextarea(ta);
   }
 
   function insertAtCursor(text) {
-    const ta = document.getElementById("md-input");
+    const ta = getEditableTextarea();
     const s = ctxState.start;
     const e = ctxState.end;
     const val = ta.value;
@@ -1171,7 +1698,7 @@
     ta.focus();
     const pos = s + text.length;
     ta.setSelectionRange(pos, pos);
-    convert();
+    commitEditableTextarea(ta);
   }
 
   // ── Table dimension picker ────────────────────────────
@@ -1262,12 +1789,12 @@
   function closeTablePicker() {
     document.getElementById("table-picker").classList.add("hidden");
     /* Put focus back on the editor so the user can keep typing. */
-    const ta = document.getElementById("md-input");
+    const ta = getEditableTextarea();
     if (ta) ta.focus();
   }
 
   function prefixLines(prefixFn) {
-    const ta = document.getElementById("md-input");
+    const ta = getEditableTextarea();
     const val = ta.value;
     const s = ctxState.start;
     const e = ctxState.end;
@@ -1280,7 +1807,7 @@
     ta.value = val.slice(0, lineStart) + transformed + val.slice(lineEnd);
     ta.focus();
     ta.setSelectionRange(lineStart, lineStart + transformed.length);
-    convert();
+    commitEditableTextarea(ta);
   }
 
   // ── Tab-to-indent ────────────────────────────────────────────────────────
@@ -1329,7 +1856,7 @@
   // ── Action dispatcher ───────────────────────────────────────────────────
 
   function execCtxAction(action) {
-    const ta = document.getElementById("md-input");
+    const ta = getEditableTextarea();
 
     switch (action) {
       // Links
@@ -1391,7 +1918,7 @@
         ta.focus();
         var endPos = ta.value.length;
         ta.setSelectionRange(endPos, endPos);
-        convert();
+        commitEditableTextarea(ta);
         break;
       case "table":
         openTablePicker();
@@ -1414,7 +1941,7 @@
             ta.value = val.slice(0, ctxState.start) + val.slice(ctxState.end);
             ta.focus();
             ta.setSelectionRange(ctxState.start, ctxState.start);
-            convert();
+            commitEditableTextarea(ta);
           }, function () { showToast("Clipboard access denied"); });
         }
         break;
@@ -1434,7 +1961,7 @@
           ta.focus();
           var pos = ctxState.start + text.length;
           ta.setSelectionRange(pos, pos);
-          convert();
+          commitEditableTextarea(ta);
         }, function () { showToast("Clipboard access denied"); });
         break;
       case "selectAll":
@@ -1613,6 +2140,13 @@
       applyHtmlViewMode(e.target.value);
     });
 
+    const savedMdViewMode = safeStorage.get(MD_VIEW_MODE_KEY);
+    applyMdViewMode(savedMdViewMode === "live" ? "live" : "code");
+    document.getElementById("md-view-mode").addEventListener("change", (e) => {
+      applyMdViewMode(e.target.value);
+    });
+    document.getElementById("md-live").addEventListener("mousedown", onMdLiveMousedown);
+
     document.getElementById("md-input").addEventListener("input", () => {
       // Save BEFORE converting so that if the parser ever hangs or throws,
       // the latest textarea content is still persisted for next page load.
@@ -1667,6 +2201,21 @@
       showCtxMenu(e.clientX, e.clientY);
     });
 
+    // Same context menu on the Live view's currently active block editor.
+    // Delegated on #md-live (not the textarea itself) since that element
+    // is created/destroyed as blocks activate/deactivate; right-clicking
+    // a static (not-yet-active) block does nothing, same as right-clicking
+    // outside a textarea does nothing in Code view.
+    document.getElementById("md-live").addEventListener("contextmenu", (e) => {
+      const ta = e.target.closest(".md-live-editor");
+      if (!ta) return;
+      e.preventDefault();
+      ctxState.start = ta.selectionStart;
+      ctxState.end = ta.selectionEnd;
+      ctxState.text = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+      showCtxMenu(e.clientX, e.clientY);
+    });
+
     document.addEventListener("mousedown", (e) => {
       const menu = document.getElementById("ctx-menu");
       if (!menu.classList.contains("hidden") && !menu.contains(e.target)) hideCtxMenu();
@@ -1674,8 +2223,21 @@
 
     document.getElementById("ctx-menu").addEventListener("keydown", onCtxMenuKeydown);
 
+    /* Menu rows have tabIndex=-1 so arrow-key navigation can focus them,
+       which means a plain mouse click on one also shifts focus there —
+       away from whatever textarea the menu was opened on. In Live view
+       that native blur runs deactivateActiveBlock() (commit + rebuild)
+       BEFORE the row's own click handler/execCtxAction fires, destroying
+       the block textarea the action was meant to apply to. Suppressing
+       the focus-shift on mousedown (clicks still fire normally after)
+       keeps the real target focused throughout the click.               */
+    document.getElementById("ctx-menu").addEventListener("mousedown", (e) => {
+      e.preventDefault();
+    });
+
     window.addEventListener("resize", hideCtxMenu);
     document.getElementById("md-input").addEventListener("scroll", hideCtxMenu);
+    document.getElementById("md-live").addEventListener("scroll", hideCtxMenu);
     document.getElementById("md-input").addEventListener("keydown", handleEditorTab);
 
     const DEMO = `# Welcome to MD → HTML
@@ -1718,6 +2280,7 @@ Inline \`code\` is styled too.
       document.getElementById("md-input").value = text;
       updateStats();
       convert();
+      if (mdViewMode === "live") renderLiveView();
     }
 
     const saved = safeStorage.get("mdToHtmlContent");

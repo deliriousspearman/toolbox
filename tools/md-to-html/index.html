@@ -42,15 +42,20 @@
 
   <main>
     <div class="editor-pane">
-      <div class="pane" id="pane-md">
+      <div class="pane view-code" id="pane-md">
         <div class="pane-label">
           markdown
           <span class="pane-label-controls">
             <span id="md-stats" class="pane-stats"></span>
+            <select id="md-view-mode" title="Editor view">
+              <option value="code">Code</option>
+              <option value="live">Live</option>
+            </select>
             <button class="expand-btn" id="expand-md" title="Expand markdown">&#x25A1;</button>
           </span>
         </div>
         <textarea id="md-input" spellcheck="false" placeholder="Type or paste Markdown here…"></textarea>
+        <div id="md-live" class="md-live"></div>
       </div>
       <div class="pane-resizer" id="pane-resizer" role="separator" aria-orientation="vertical" aria-label="Resize panes"></div>
       <div class="pane view-raw" id="pane-html">

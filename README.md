@@ -8,7 +8,7 @@ A collection of browser-based tools. No build system, no package manager, no cli
 |------|------|-------------|
 | **procwordle** | `tools/process-wordle/` | Daily Wordle variant — guess the hidden Unix process name |
 | **cron time** | `tools/cron-time/` | Parse a cron expression and preview the next run times with timezone and clock skew support |
-| **md → html** | `tools/md-to-html/` | Convert Markdown to a self-contained HTML file with Dracula, Nord, or custom inline CSS themes |
+| **md → html** | `tools/md-to-html/` | Convert Markdown to a self-contained HTML file with Dracula, Nord, or custom inline CSS themes — edit in a plain-text or Obsidian-style live-rendered view |
 | **shell explain** | `tools/shell-explain/` | Searchable annotated shell command library — every command broken into colour-coded, explained tokens; all entries are editable and persisted server-side |
 
 ---
