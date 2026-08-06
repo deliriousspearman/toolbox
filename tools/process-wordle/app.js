@@ -1,14 +1,7 @@
 (function () {
   "use strict";
 
-  /* Short getElementById wrapper that throws a descriptive error when
-     the id goes missing, so an HTML/JS drift becomes a greppable
-     message instead of a null-access crash inside a modal render.   */
-  function $(id) {
-    const el = document.getElementById(id);
-    if (!el) throw new Error("procwordle: missing element #" + id);
-    return el;
-  }
+  const $ = domGetter("procwordle");
 
   const MAX_GUESSES = 5;
   /* State was keyed on "processWordle" (one slot, today only). With the
@@ -307,7 +300,7 @@
 
   // ── Rendering ───────────────────────────────────────────
 
-  function renderGrid() {
+  function renderGrid(allFeedback) {
     const grid = document.getElementById("grid");
     grid.innerHTML = "";
     grid.style.setProperty("--cols", state.wordLen);
@@ -331,7 +324,7 @@
 
         if (g < state.guesses.length) {
           // Submitted row
-          const feedback = computeFeedback(state.guesses[g], state.word);
+          const feedback = allFeedback[g];
           for (let c = 0; c < state.wordLen; c++) {
             const cell = document.createElement("div");
             cell.className = `cell ${feedback[c]}`;
@@ -364,11 +357,11 @@
     }
   }
 
-  function computeKeyboardState() {
+  function computeKeyboardState(allFeedback) {
     const priority = { correct: 3, present: 2, absent: 1 };
     const keyState = {};
-    for (const guess of state.guesses) {
-      const feedback = computeFeedback(guess, state.word);
+    state.guesses.forEach((guess, gi) => {
+      const feedback = allFeedback[gi];
       for (let i = 0; i < guess.length; i++) {
         const letter = guess[i];
         const status = feedback[i];
@@ -376,12 +369,12 @@
           keyState[letter] = status;
         }
       }
-    }
+    });
     return keyState;
   }
 
-  function renderKeyboard() {
-    const keyState = computeKeyboardState();
+  function renderKeyboard(allFeedback) {
+    const keyState = computeKeyboardState(allFeedback);
     document.querySelectorAll(".key[data-key]").forEach(btn => {
       const k = btn.dataset.key;
       btn.className = "key" + (k.length > 1 ? " wide" : "");
@@ -418,9 +411,13 @@
     }
   }
 
+  /* Every submitted guess's feedback is computed once here and threaded
+     into renderGrid/renderKeyboard, instead of each independently
+     recomputing computeFeedback for the same guesses on every call. */
   function renderAll() {
-    renderGrid();
-    renderKeyboard();
+    const allFeedback = state.guesses.map(g => computeFeedback(g, state.word));
+    renderGrid(allFeedback);
+    renderKeyboard(allFeedback);
     renderHint();
   }
 
@@ -538,7 +535,7 @@
       // Only announce for actual gameplay keys; modifier keys and Escape
       // are handled by other listeners and shouldn't trigger the toast.
       if (!gameOverToastShown && (key === "Enter" || key === "Backspace" || /^[a-zA-Z]$/.test(key))) {
-        showToast(state.won ? "already solved — new word tomorrow" : "game over — new word tomorrow");
+        showToast(state.won ? "already solved — new word tomorrow" : "game over — new word tomorrow", 1400, true);
         gameOverToastShown = true;
       }
       return;
@@ -568,7 +565,7 @@
     if (hardMode && state.guesses.length > 0) {
       const violation = getHardModeViolation(state.currentInput);
       if (violation) {
-        showToast(violation);
+        showToast(violation, 1400, true);
         shakeActiveRow();
         return;
       }
@@ -623,27 +620,27 @@
 
   // ── Share / Clipboard ────────────────────────────────────
 
+  /* Shared by buildShareText (clipboard) and renderSharePreview (on-screen
+     modal) — both rendered the same emoji grid via separately duplicated
+     logic. */
+  function buildEmojiRows() {
+    const rows = state.guesses.map(guess =>
+      computeFeedback(guess, state.word).map(s => EMOJI[s]).join("")
+    );
+    if (state.hintRevealed) {
+      rows.splice(state.hintRow, 0, EMOJI.penalty.repeat(state.wordLen));
+    }
+    return rows;
+  }
+
   function buildShareText() {
     const score  = state.won ? `${state.guesses.length}/${getEffectiveMax()}` : `X/${getEffectiveMax()}`;
     const header = `ProcWordle ${state.date} ${score}`;
-    const rows   = state.guesses.map(guess =>
-      computeFeedback(guess, state.word).map(s => EMOJI[s]).join("")
-    );
-    if (state.hintRevealed) {
-      rows.splice(state.hintRow, 0, EMOJI.penalty.repeat(state.wordLen));
-    }
-    return [header, "", ...rows].join("\n");
+    return [header, "", ...buildEmojiRows()].join("\n");
   }
 
   function renderSharePreview() {
-    const preview = document.getElementById("share-preview");
-    const rows    = state.guesses.map(guess =>
-      computeFeedback(guess, state.word).map(s => EMOJI[s]).join("")
-    );
-    if (state.hintRevealed) {
-      rows.splice(state.hintRow, 0, EMOJI.penalty.repeat(state.wordLen));
-    }
-    preview.textContent = rows.join("\n");
+    document.getElementById("share-preview").textContent = buildEmojiRows().join("\n");
   }
 
   // ── End Modal ────────────────────────────────────────────
@@ -652,7 +649,6 @@
   let hardMode       = false;
   let highContrast   = false;
   let soundEnabled   = true;
-  let toastTimer     = null;
 
   function showEndModal() {
     const modal = $("modal");
@@ -691,26 +687,10 @@
     copyBtn.textContent = "COPY RESULTS";
     copyBtn.onclick = () => {
       const text = buildShareText();
-      const done = () => {
+      copyText(text).then(() => {
         copyBtn.textContent = "COPIED!";
         setTimeout(() => { copyBtn.textContent = "COPY RESULTS"; }, 2000);
-      };
-      const fallback = () => {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.position = "fixed";
-        ta.style.opacity  = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        done();
-      };
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(done).catch(fallback);
-      } else {
-        fallback();
-      }
+      }).catch(() => showToast("Copy failed", 1400, true));
     };
   }
 
@@ -720,21 +700,6 @@
       clearInterval(countdownTimer);
       countdownTimer = null;
     }
-  }
-
-  // ── Toast ────────────────────────────────────────────────
-
-  function showToast(message, duration) {
-    if (duration === undefined) duration = 1400;
-    const toast = document.getElementById("toast");
-    toast.textContent = message;
-    toast.classList.remove("fade");
-    toast.classList.add("visible");
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toast.classList.add("fade");
-      setTimeout(() => toast.classList.remove("visible", "fade"), 350);
-    }, duration);
   }
 
   // ── Hard Mode validation ──────────────────────────────────
@@ -778,7 +743,7 @@
     state.hintRow      = state.guesses.length;
     state.hintRevealed = true;
     saveState();
-    showToast("Hint revealed — 1 guess deducted", 2000);
+    showToast("Hint revealed — 1 guess deducted", 2000, true);
     renderAll();
 
     const penaltyRow = document.getElementById("grid").children[state.hintRow];

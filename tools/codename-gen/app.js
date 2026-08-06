@@ -8,41 +8,11 @@
   let activeCategories = new Set();
   let history        = [];
   let pendingFlash   = false;   // true while a fresh entry is waiting to be highlighted
-  let toastTimer     = null;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   function pick(pool) {
     return pool[Math.floor(Math.random() * pool.length)];
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById("toast");
-    if (!t) return;
-    t.textContent = msg;
-    t.classList.add("visible");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("visible"), 1800);
-  }
-
-  /* Copy text to the clipboard. Uses the async Clipboard API when
-     available and falls back to the hidden-textarea execCommand path
-     for older browsers / file:// contexts.                           */
-  function copyText(text) {
-    if (navigator.clipboard && window.isSecureContext) {
-      return navigator.clipboard.writeText(text);
-    }
-    return new Promise((resolve) => {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity  = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand("copy"); } catch (e) { console.warn("copyText fallback failed", e); }
-      ta.remove();
-      resolve();
-    });
   }
 
   // ── Generate ──────────────────────────────────────────────────────────────
@@ -214,8 +184,8 @@
             /* Force reflow so the keyframe restarts on repeated clicks. */
             void chip.offsetWidth;
             chip.classList.add("chip-flash");
-            showToast('copied "' + word + '"');
-          });
+            showToast('copied "' + word + '"', 1800);
+          }).catch(() => showToast("Copy failed", 1800));
         });
         container.appendChild(chip);
       });

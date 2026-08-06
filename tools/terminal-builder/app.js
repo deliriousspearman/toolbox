@@ -1,11 +1,7 @@
 (function () {
   "use strict";
 
-  function $(id) {
-    const el = document.getElementById(id);
-    if (!el) throw new Error("terminal-builder: missing element #" + id);
-    return el;
-  }
+  const $ = domGetter("terminal-builder");
 
   const STORAGE_KEY = "terminalBuilderState";
 
@@ -15,21 +11,13 @@
   // needed) and the colour palette is chosen per-render based on the user's
   // background colour rather than a fixed theme.
 
-  const KEYWORDS = {
-    js:   new Set(["break","case","catch","class","const","continue","debugger","default","delete","do","else","export","extends","finally","for","function","if","import","in","instanceof","let","new","return","static","super","switch","this","throw","try","typeof","var","void","while","with","yield","async","await","of","from","true","false","null","undefined","NaN","Infinity"]),
-    py:   new Set(["and","as","assert","async","await","break","class","continue","def","del","elif","else","except","finally","for","from","global","if","import","in","is","lambda","not","or","pass","raise","return","try","while","with","yield","True","False","None"]),
-    sh:   new Set(["if","then","else","elif","fi","for","do","done","while","until","case","esac","function","return","in","exit","echo","source","export","local","readonly","unset"]),
-    json: new Set(["true","false","null"]),
-    sql:  new Set(["select","from","where","join","left","right","inner","outer","on","group","by","having","order","limit","offset","insert","into","values","update","set","delete","create","table","index","drop","alter","add","and","or","not","null","as","distinct","count","sum","avg","max","min","in","exists","like","between","union","all","with","case","when","then","else","end","is","asc","desc","unique","primary","key","foreign","references","constraint"]),
-    rust: new Set(["as","break","const","continue","crate","else","enum","extern","false","fn","for","if","impl","in","let","loop","match","mod","move","mut","pub","ref","return","self","Self","static","struct","super","trait","true","type","unsafe","use","where","while","async","await","dyn"]),
-    go:   new Set(["break","case","chan","const","continue","default","defer","else","fallthrough","for","func","go","goto","if","import","interface","map","package","range","return","select","struct","switch","type","var","true","false","nil"]),
-    html: new Set([]),
-    css:  new Set(["important","inherit","initial","unset","none","auto","normal","bold","italic","solid","dashed","dotted","hidden","visible","absolute","relative","fixed","sticky","flex","grid","block","inline","float","left","right","center","top","bottom","middle"]),
-  };
-  // "terminal" shares bash's reserved-word set but layers on prompt/command/
-  // sudo highlighting below; "shell / bash" stays plain (reserved words,
-  // strings, comments, numbers only) for people who want real script syntax.
-  KEYWORDS.terminal = KEYWORDS.sh;
+  // Base KEYWORDS/tokenRegex/baseColor come from the shared
+  // tools/syntax-highlight.js module (loaded before this file) — also used
+  // by md-to-html. "terminal" isn't one of its languages; it shares bash's
+  // reserved-word set but layers prompt/command/sudo highlighting below —
+  // "shell / bash" itself stays plain (reserved words, strings, comments,
+  // numbers only) for people who want real script syntax.
+  const KEYWORDS = Object.assign({}, SyntaxHighlight.KEYWORDS, { terminal: SyntaxHighlight.KEYWORDS.sh });
 
   // "terminal" mode is for pasted terminal sessions, not shell scripts —
   // real content is overwhelmingly command names (whoami, nmap, curl…), not
@@ -91,13 +79,7 @@
   // -[path] segment. Group 3 (path) is undefined when there's no bracket.
   const BOX_INFO_PARTS_RE = new RegExp("^([" + BOX_CHARS + "]+)\\(([^)]*)\\)(?:-\\[([^\\]]*)\\])?$");
 
-  function escapeHtml(s) {
-    return s
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
+  const escapeHtml = SyntaxHighlight.escapeHtml;
 
   function highlightCode(rawCode, lang, syn) {
     if (lang === "plain" || !KEYWORDS[lang]) return escapeHtml(rawCode);
@@ -105,26 +87,20 @@
     const kwSet = KEYWORDS[lang];
 
     let re;
-    if (lang === "py") {
-      re = /(#[^\n]*|"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*(?:e[+-]?\d+)?\b|[A-Za-z_][A-Za-z0-9_]*)/g;
-    } else if (lang === "terminal") {
+    if (lang === "terminal") {
       // Prompt alternatives are anchored to line start (needs "m"); the
       // box-drawing ones are listed first so a Kali-style two-line prompt is
       // captured whole, ahead of the plain identifier/comment alternatives.
+      // Not one of SyntaxHighlight's languages — built locally since the
+      // box-drawing/prompt regex is unique to this tool.
       re = new RegExp(
         "^[" + BOX_CHARS + "]+\\([^)]*\\)(?:-\\[[^\\]]*\\])?" +
         "|^[" + BOX_CHARS + "]+[$#](?=[ \\t]|$)" +
         "|" + TERMINAL_TOKEN_BASE.source,
         "gm"
       );
-    } else if (lang === "sh") {
-      re = /(#[^\n]*|"(?:[^"\\]|\\.)*"|'[^']*'|\b\d+\b|[A-Za-z_][A-Za-z0-9_]*)/g;
-    } else if (lang === "html") {
-      re = /(<!--[\s\S]*?-->|<\/?[A-Za-z][A-Za-z0-9-]*|\/?>|"[^"]*"|'[^']*'|[A-Za-z][A-Za-z0-9-]*(?==))/g;
-    } else if (lang === "css") {
-      re = /(\/\*[\s\S]*?\*\/|"[^"]*"|'[^']*'|#[0-9a-fA-F]{3,8}\b|\b\d+\.?\d*(?:px|em|rem|%|vh|vw|pt|s|ms|deg)?\b|@[A-Za-z-]+|:[A-Za-z-]+|[A-Za-z_-][A-Za-z0-9_-]*)/g;
     } else {
-      re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/|`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*(?:e[+-]?\d+)?\b|[A-Za-z_$][A-Za-z0-9_$]*)/g;
+      re = SyntaxHighlight.tokenRegex(lang);
     }
 
     let out = "";
@@ -139,59 +115,48 @@
       let bold = false;
       let segmentHtml = null;
 
-      if (lang === "html") {
-        if (tok.startsWith("<!--")) color = syn.comment;
-        else if (tok.startsWith("<") || tok === "/>") color = syn.keyword;
-        else if (tok[0] === '"' || tok[0] === "'") color = syn.string;
-      } else if (lang === "css") {
-        if (tok.startsWith("/*")) color = syn.comment;
-        else if (tok[0] === '"' || tok[0] === "'") color = syn.string;
-        else if (tok.startsWith("#") && /^#[0-9a-fA-F]{3,8}$/.test(tok)) color = syn.number;
-        else if (/^\d/.test(tok)) color = syn.number;
-        else if (tok.startsWith("@") || tok.startsWith(":")) color = syn.keyword;
-        else if (kwSet.has(tok)) color = syn.keyword;
-      } else {
-        if (lang === "terminal" && SH_PROMPT_RE.test(tok)) {
-          const userMatch = tok.match(USERHOST_PROMPT_RE) || tok.match(BOX_INFO_LINE_RE);
-          if (userMatch) lastPromptRoot = userMatch[1] === "root";
-          else if (!BOX_CMD_LINE_RE.test(tok)) lastPromptRoot = false; // bare $ / % carries no user info
-          const roleColor = lastPromptRoot ? syn.promptRoot : syn.prompt;
-          const boxColor = lastPromptRoot ? syn.boxRoot : syn.box;
+      if (lang === "terminal" && SH_PROMPT_RE.test(tok)) {
+        const userMatch = tok.match(USERHOST_PROMPT_RE) || tok.match(BOX_INFO_LINE_RE);
+        if (userMatch) lastPromptRoot = userMatch[1] === "root";
+        else if (!BOX_CMD_LINE_RE.test(tok)) lastPromptRoot = false; // bare $ / % carries no user info
+        const roleColor = lastPromptRoot ? syn.promptRoot : syn.prompt;
+        const boxColor = lastPromptRoot ? syn.boxRoot : syn.box;
 
-          const infoParts = tok.match(BOX_INFO_PARTS_RE);
-          if (infoParts) {
-            // e.g. ┌──(user㉿host)-[~]: box glyphs + ()-brackets in `box`/
-            // `boxRoot`, the user@host content in the prompt/root colour,
-            // and the path inside -[...] (if present) in `path`.
-            const [, boxChars, parenInner, pathInner] = infoParts;
-            segmentHtml =
-              `<span style="color:${boxColor}">${escapeHtml(boxChars)}(</span>` +
-              `<span style="color:${roleColor}">${escapeHtml(parenInner)}</span>` +
-              `<span style="color:${boxColor}">)</span>`;
-            if (pathInner !== undefined) {
-              segmentHtml +=
-                `<span style="color:${boxColor}">-[</span>` +
-                `<span style="color:${syn.path}">${escapeHtml(pathInner)}</span>` +
-                `<span style="color:${boxColor}">]</span>`;
-            }
+        const infoParts = tok.match(BOX_INFO_PARTS_RE);
+        if (infoParts) {
+          // e.g. ┌──(user㉿host)-[~]: box glyphs + ()-brackets in `box`/
+          // `boxRoot`, the user@host content in the prompt/root colour,
+          // and the path inside -[...] (if present) in `path`.
+          const [, boxChars, parenInner, pathInner] = infoParts;
+          segmentHtml =
+            `<span style="color:${boxColor}">${escapeHtml(boxChars)}(</span>` +
+            `<span style="color:${roleColor}">${escapeHtml(parenInner)}</span>` +
+            `<span style="color:${boxColor}">)</span>`;
+          if (pathInner !== undefined) {
+            segmentHtml +=
+              `<span style="color:${boxColor}">-[</span>` +
+              `<span style="color:${syn.path}">${escapeHtml(pathInner)}</span>` +
+              `<span style="color:${boxColor}">]</span>`;
+          }
+        } else {
+          const boxMatch = tok.match(BOX_PREFIX_RE);
+          if (boxMatch) {
+            const boxPart = boxMatch[0];
+            const rest = tok.slice(boxPart.length);
+            segmentHtml = `<span style="color:${boxColor}">${escapeHtml(boxPart)}</span>`;
+            if (rest) segmentHtml += `<span style="color:${roleColor}">${escapeHtml(rest)}</span>`;
           } else {
-            const boxMatch = tok.match(BOX_PREFIX_RE);
-            if (boxMatch) {
-              const boxPart = boxMatch[0];
-              const rest = tok.slice(boxPart.length);
-              segmentHtml = `<span style="color:${boxColor}">${escapeHtml(boxPart)}</span>`;
-              if (rest) segmentHtml += `<span style="color:${roleColor}">${escapeHtml(rest)}</span>`;
-            } else {
-              color = roleColor;
-            }
+            color = roleColor;
           }
         }
-        else if (tok.startsWith("//") || tok.startsWith("/*") || tok.startsWith("#")) color = syn.comment;
-        else if (tok[0] === '"' || tok[0] === "'" || tok[0] === "`") color = syn.string;
-        else if (/^(?:0x[\da-fA-F]+|\d)/.test(tok)) color = syn.number;
-        else if (lang === "terminal" && tok === "sudo") { color = syn.sudo; bold = true; }
-        else if (kwSet.has(lang === "sql" ? tok.toLowerCase() : tok)) color = syn.keyword;
-        else if (lang === "terminal" && SH_COMMANDS.has(tok)) color = syn.command;
+      } else {
+        // html/css/comment/string/number/keyword: shared with md-to-html
+        // via SyntaxHighlight.baseColor(); sudo/command are terminal-only.
+        color = SyntaxHighlight.baseColor(lang, tok, kwSet, syn);
+        if (color === null && lang === "terminal") {
+          if (tok === "sudo") { color = syn.sudo; bold = true; }
+          else if (SH_COMMANDS.has(tok)) color = syn.command;
+        }
       }
 
       if (segmentHtml !== null) {
@@ -334,40 +299,6 @@
       "  " + pre,
       "</div>",
     ].join("\n");
-  }
-
-  // ── Clipboard ─────────────────────────────────────────────────────────────
-  // Async Clipboard API needs a secure context; fall back to a hidden
-  // textarea + execCommand("copy") when that's unavailable (e.g. plain
-  // http:// hosting).
-
-  function copyText(text) {
-    if (navigator.clipboard && window.isSecureContext) {
-      return navigator.clipboard.writeText(text);
-    }
-    return new Promise((resolve, reject) => {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      let ok = false;
-      try { ok = document.execCommand("copy"); }
-      catch (e) { console.warn("copyText fallback threw", e); }
-      ta.remove();
-      ok ? resolve() : reject(new Error("execCommand copy failed"));
-    });
-  }
-
-  let toastTimer = null;
-
-  function showToast(msg) {
-    const toast = $("toast");
-    toast.textContent = msg;
-    toast.classList.add("visible");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("visible"), 2000);
   }
 
   // ── State ─────────────────────────────────────────────────────────────────

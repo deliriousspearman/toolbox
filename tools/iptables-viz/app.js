@@ -572,17 +572,6 @@
     if (wasVisible && state.rules.length) render(state.rules);
   }
 
-  // ── Utilities ──────────────────────────────────────────────────────────
-
-  let toastTimer = null;
-  function showToast(msg) {
-    const toast = document.getElementById("toast");
-    toast.textContent = msg;
-    toast.classList.add("visible");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("visible"), 2000);
-  }
-
   // ── Demo data ──────────────────────────────────────────────────────────
 
   const DEMO_FILTER = `Chain INPUT (policy DROP 0 packets, 0 bytes)

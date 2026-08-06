@@ -1,16 +1,7 @@
 (function () {
   "use strict";
 
-  /* Short document.getElementById wrapper that throws a descriptive
-     error when the id is missing, rather than letting .value or
-     .textContent NRE-crash with "Cannot read property of null".
-     Used in the customizer/preview paths where the element list is
-     long and a silent drift would be painful to debug.              */
-  function $(id) {
-    const el = document.getElementById(id);
-    if (!el) throw new Error("md-to-html: missing element #" + id);
-    return el;
-  }
+  const $ = domGetter("md-to-html");
 
   // ── Themes ────────────────────────────────────────────────────────────────
 
@@ -160,13 +151,7 @@
       .join("; ");
   }
 
-  function escapeHtml(s) {
-    return s
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
+  const escapeHtml = SyntaxHighlight.escapeHtml;
 
   function deepCopy(obj) {
     return JSON.parse(JSON.stringify(obj));
@@ -286,6 +271,8 @@
 
   // ── Syntax highlighter ────────────────────────────────────────────────────
 
+  // KEYWORDS/tokenRegex/baseColor come from the shared tools/syntax-highlight.js
+  // module (loaded before this file) — also used by terminal-builder.
   function highlightCode(rawCode, lang, syn) {
     const LANG_ALIASES = {
       javascript: "js", jsx: "js", ts: "js", typescript: "js", tsx: "js",
@@ -299,69 +286,28 @@
       go: "go",
     };
     const norm = LANG_ALIASES[lang];
-    if (!norm) return escapeHtml(rawCode);
+    if (!norm) return SyntaxHighlight.escapeHtml(rawCode);
 
-    const KEYWORDS = {
-      js:   new Set(["break","case","catch","class","const","continue","debugger","default","delete","do","else","export","extends","finally","for","function","if","import","in","instanceof","let","new","return","static","super","switch","this","throw","try","typeof","var","void","while","with","yield","async","await","of","from","true","false","null","undefined","NaN","Infinity"]),
-      py:   new Set(["and","as","assert","async","await","break","class","continue","def","del","elif","else","except","finally","for","from","global","if","import","in","is","lambda","not","or","pass","raise","return","try","while","with","yield","True","False","None"]),
-      sh:   new Set(["if","then","else","elif","fi","for","do","done","while","until","case","esac","function","return","in","exit","echo","source","export","local","readonly","unset"]),
-      json: new Set(["true","false","null"]),
-      sql:  new Set(["select","from","where","join","left","right","inner","outer","on","group","by","having","order","limit","offset","insert","into","values","update","set","delete","create","table","index","drop","alter","add","and","or","not","null","as","distinct","count","sum","avg","max","min","in","exists","like","between","union","all","with","case","when","then","else","end","is","asc","desc","unique","primary","key","foreign","references","constraint"]),
-      rust: new Set(["as","break","const","continue","crate","else","enum","extern","false","fn","for","if","impl","in","let","loop","match","mod","move","mut","pub","ref","return","self","Self","static","struct","super","trait","true","type","unsafe","use","where","while","async","await","dyn"]),
-      go:   new Set(["break","case","chan","const","continue","default","defer","else","fallthrough","for","func","go","goto","if","import","interface","map","package","range","return","select","struct","switch","type","var","true","false","nil"]),
-      html: new Set([]),
-      css:  new Set(["important","inherit","initial","unset","none","auto","normal","bold","italic","solid","dashed","dotted","hidden","visible","absolute","relative","fixed","sticky","flex","grid","block","inline","float","left","right","center","top","bottom","middle"]),
-    };
-
-    const kwSet = KEYWORDS[norm];
-
-    let re;
-    if (norm === "py") {
-      re = /(#[^\n]*|"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*(?:e[+-]?\d+)?\b|[A-Za-z_][A-Za-z0-9_]*)/g;
-    } else if (norm === "sh") {
-      re = /(#[^\n]*|"(?:[^"\\]|\\.)*"|'[^']*'|\b\d+\b|[A-Za-z_][A-Za-z0-9_]*)/g;
-    } else if (norm === "html") {
-      re = /(<!--[\s\S]*?-->|<\/?[A-Za-z][A-Za-z0-9-]*|\/?>|"[^"]*"|'[^']*'|[A-Za-z][A-Za-z0-9-]*(?==))/g;
-    } else if (norm === "css") {
-      re = /(\/\*[\s\S]*?\*\/|"[^"]*"|'[^']*'|#[0-9a-fA-F]{3,8}\b|\b\d+\.?\d*(?:px|em|rem|%|vh|vw|pt|s|ms|deg)?\b|@[A-Za-z-]+|:[A-Za-z-]+|[A-Za-z_-][A-Za-z0-9_-]*)/g;
-    } else {
-      re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/|`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*(?:e[+-]?\d+)?\b|[A-Za-z_$][A-Za-z0-9_$]*)/g;
-    }
+    const kwSet = SyntaxHighlight.KEYWORDS[norm];
+    const re = SyntaxHighlight.tokenRegex(norm);
+    const esc = SyntaxHighlight.escapeHtml;
 
     let out = "";
     let last = 0;
     let m;
 
     while ((m = re.exec(rawCode)) !== null) {
-      if (m.index > last) out += escapeHtml(rawCode.slice(last, m.index));
+      if (m.index > last) out += esc(rawCode.slice(last, m.index));
       const tok = m[0];
-      let color = null;
-
-      if (norm === "html") {
-        if (tok.startsWith("<!--")) color = syn.comment;
-        else if (tok.startsWith("<") || tok === "/>") color = syn.keyword;
-        else if (tok[0] === '"' || tok[0] === "'") color = syn.string;
-      } else if (norm === "css") {
-        if (tok.startsWith("/*")) color = syn.comment;
-        else if (tok[0] === '"' || tok[0] === "'") color = syn.string;
-        else if (tok.startsWith("#") && /^#[0-9a-fA-F]{3,8}$/.test(tok)) color = syn.number;
-        else if (/^\d/.test(tok)) color = syn.number;
-        else if (tok.startsWith("@") || tok.startsWith(":")) color = syn.keyword;
-        else if (kwSet.has(tok)) color = syn.keyword;
-      } else {
-        if (tok.startsWith("//") || tok.startsWith("/*") || tok.startsWith("#")) color = syn.comment;
-        else if (tok[0] === '"' || tok[0] === "'" || tok[0] === "`") color = syn.string;
-        else if (/^(?:0x[\da-fA-F]+|\d)/.test(tok)) color = syn.number;
-        else if (kwSet.has(norm === "sql" ? tok.toLowerCase() : tok)) color = syn.keyword;
-      }
+      const color = SyntaxHighlight.baseColor(norm, tok, kwSet, syn);
 
       out += color
-        ? `<span style="color:${color}">${escapeHtml(tok)}</span>`
-        : escapeHtml(tok);
+        ? `<span style="color:${color}">${esc(tok)}</span>`
+        : esc(tok);
       last = re.lastIndex;
     }
 
-    if (last < rawCode.length) out += escapeHtml(rawCode.slice(last));
+    if (last < rawCode.length) out += esc(rawCode.slice(last));
     return out;
   }
 
@@ -1118,43 +1064,10 @@
   // Storage access goes through window.safeStorage (tools/storage.js) which
   // wraps setItem/removeItem/getItem to survive quota or private-mode errors.
 
-  let toastTimer = null;
-
   function updateStats() {
     const text = document.getElementById("md-input").value;
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
     document.getElementById("md-stats").textContent = `${words} words · ${text.length} chars`;
-  }
-
-  function showToast(msg) {
-    const toast = document.getElementById("toast");
-    toast.textContent = msg;
-    toast.classList.add("visible");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("visible"), 2000);
-  }
-
-  /* Clipboard with a hidden-textarea fallback — the async Clipboard
-     API requires a secure context, which breaks copy on file://
-     or plain http:// (e.g. some internal hosts). Fall through to
-     execCommand("copy") as a last resort. */
-  function copyText(text) {
-    if (navigator.clipboard && window.isSecureContext) {
-      return navigator.clipboard.writeText(text);
-    }
-    return new Promise((resolve, reject) => {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity  = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      let ok = false;
-      try { ok = document.execCommand("copy"); }
-      catch (e) { console.warn("copyText fallback threw", e); }
-      ta.remove();
-      ok ? resolve() : reject(new Error("execCommand copy failed"));
-    });
   }
 
   function copyMD() {

@@ -32,11 +32,7 @@
 
   // ── DOM handles ────────────────────────────────────────────────────────────
 
-  const $ = (id) => {
-    const el = document.getElementById(id);
-    if (!el) throw new Error("forensics: missing element #" + id);
-    return el;
-  };
+  const $ = domGetter("forensics");
 
   const els = {};
 
@@ -67,7 +63,7 @@
       state.data = await res.json();
     } catch (err) {
       console.warn("forensics: fetch failed", err);
-      showToast("Couldn't load artifacts — " + (err.message || "network error"));
+      showToast("Couldn't load artifacts — " + (err.message || "network error"), 2500);
       return;
     }
 
@@ -164,7 +160,7 @@
     safeStorage.save(STORAGE_KEY, JSON.stringify(state.collected));
     renderList();
     updateProgress();
-    showToast("Cleared");
+    showToast("Cleared", 2500);
   }
 
   // ── Filtering ──────────────────────────────────────────────────────────────
@@ -307,7 +303,7 @@
 
   function enterEditMode() {
     if (!state.os) {
-      showToast("Pick a platform first");
+      showToast("Pick a platform first", 2500);
       return;
     }
     state.editing = true;
@@ -360,11 +356,11 @@
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || ("HTTP " + res.status));
-      showToast("Saved");
+      showToast("Saved", 2500);
       exitEditMode();
     } catch (err) {
       console.warn("forensics: save failed", err);
-      showToast("Save failed — " + err.message);
+      showToast("Save failed — " + err.message, 2500);
     } finally {
       els.saveBtn.disabled = false;
       els.saveBtn.textContent = "Save";
@@ -534,17 +530,6 @@
 
   function makeId() {
     return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
-  }
-
-  // ── Toast ──────────────────────────────────────────────────────────────────
-
-  let toastTimer = null;
-  function showToast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("visible");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("visible"), 2500);
   }
 
   init();

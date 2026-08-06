@@ -25,7 +25,7 @@
          call here even though init() hasn't run yet.               */
       console.warn("shell-explain: loadCommands failed", e);
       commands = [];
-      showToast("Couldn't load commands — " + (e.message || "network error"));
+      showToast("Couldn't load commands — " + (e.message || "network error"), 2500);
     }
   }
 
@@ -250,6 +250,18 @@
 
   // ── List renderer ─────────────────────────────────────────────────────────
 
+  /* Debounced entry point for the search box: renderList() rebuilds every
+     visible card's full DOM subtree (colourised command line, tags, parts
+     list, controls) from scratch, so re-running it on every single
+     keystroke of a fast typist re-renders repeatedly for no visible
+     benefit. Non-typing triggers (category filters, add/edit/delete) call
+     renderList() directly for an instant update. */
+  let searchDebounceTimer = null;
+  function debouncedRenderList() {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(renderList, 150);
+  }
+
   function renderList() {
     const query   = document.getElementById("search-input").value.trim();
     const list    = document.getElementById("cmd-list");
@@ -277,24 +289,13 @@
     list.appendChild(frag);
   }
 
-  // ── Toast ─────────────────────────────────────────────────────────────────
-
-  let toastTimer = null;
-  function showToast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("visible");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("visible"), 2500);
-  }
-
   // ── Delete a command ──────────────────────────────────────────────────────
 
   async function deleteEntry(id) {
     try {
       await deleteCommand(id);
     } catch (e) {
-      showToast("Delete failed — " + e.message);
+      showToast("Delete failed — " + e.message, 2500);
       return;
     }
     commands = commands.filter((c) => c.id !== id);
@@ -488,7 +489,7 @@
 
     siteTheme.init();
 
-    document.getElementById("search-input").addEventListener("input", renderList);
+    document.getElementById("search-input").addEventListener("input", debouncedRenderList);
 
     document.getElementById("add-btn").addEventListener("click", () => openModal());
 

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v36";
+const CACHE_VERSION = "v42";
 const CACHE_NAME = "tools-" + CACHE_VERSION;
 
 const PRECACHE_URLS = [
@@ -10,6 +10,10 @@ const PRECACHE_URLS = [
   "/404.html",
   "/tools/storage.js",
   "/tools/theme.js",
+  "/tools/dom.js",
+  "/tools/toast.js",
+  "/tools/clipboard.js",
+  "/tools/syntax-highlight.js",
   "/fonts/share-tech-mono-400.woff2",
   "/fonts/vt323-400.woff2",
   "/tools/process-wordle/",
